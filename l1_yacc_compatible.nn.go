@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 import (
 	"bufio"
@@ -1348,36 +1349,117 @@ func NewLexerWithInit(in io.Reader, initFun func(*Lexer)) *Lexer {
 			},
 		}, []int{ /* Start-of-input transitions */ -1, -1}, []int{ /* End-of-input transitions */ -1, -1}, nil},
 
-		// [1-9][0-9]*
-		{[]bool{false, true, true}, []func(rune) int{ // Transitions
+		// 0|([1-9][0-9]*)
+		{[]bool{false, true, true, true}, []func(rune) int{ // Transitions
 			func(r rune) int {
+				switch r {
+				case 48:
+					return 1
+				}
 				switch {
 				case 48 <= r && r <= 48:
 					return -1
 				case 49 <= r && r <= 57:
+					return 2
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 48:
+					return -1
+				}
+				switch {
+				case 48 <= r && r <= 48:
+					return -1
+				case 49 <= r && r <= 57:
+					return -1
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 48:
+					return 3
+				}
+				switch {
+				case 48 <= r && r <= 48:
+					return 3
+				case 49 <= r && r <= 57:
+					return 3
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 48:
+					return 3
+				}
+				switch {
+				case 48 <= r && r <= 48:
+					return 3
+				case 49 <= r && r <= 57:
+					return 3
+				}
+				return -1
+			},
+		}, []int{ /* Start-of-input transitions */ -1, -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1, -1}, nil},
+
+		// -[1-9][0-9]*
+		{[]bool{false, false, true, true}, []func(rune) int{ // Transitions
+			func(r rune) int {
+				switch r {
+				case 45:
 					return 1
 				}
+				switch {
+				case 48 <= r && r <= 48:
+					return -1
+				case 49 <= r && r <= 57:
+					return -1
+				}
 				return -1
 			},
 			func(r rune) int {
+				switch r {
+				case 45:
+					return -1
+				}
 				switch {
 				case 48 <= r && r <= 48:
-					return 2
+					return -1
 				case 49 <= r && r <= 57:
 					return 2
 				}
 				return -1
 			},
 			func(r rune) int {
+				switch r {
+				case 45:
+					return -1
+				}
 				switch {
 				case 48 <= r && r <= 48:
-					return 2
+					return 3
 				case 49 <= r && r <= 57:
-					return 2
+					return 3
 				}
 				return -1
 			},
-		}, []int{ /* Start-of-input transitions */ -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1}, nil},
+			func(r rune) int {
+				switch r {
+				case 45:
+					return -1
+				}
+				switch {
+				case 48 <= r && r <= 48:
+					return 3
+				case 49 <= r && r <= 57:
+					return 3
+				}
+				return -1
+			},
+		}, []int{ /* Start-of-input transitions */ -1, -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1, -1}, nil},
 
 		// rcx
 		{[]bool{false, false, false, true}, []func(rune) int{ // Transitions
@@ -2446,118 +2528,138 @@ func (yylex *Lexer) next(lvl int) int {
 func (yylex *Lexer) pop() {
 	yylex.stack = yylex.stack[:len(yylex.stack)-1]
 }
-func main() {
-	var nLines, nChars int
-	func(yylex *Lexer) {
-	OUTER0:
-		for {
-			switch yylex.next(0) {
-			case 0:
-				{
-					return LPAREN
-				}
-			case 1:
-				{
-					return RPAREN
-				}
-			case 2:
-				{
-					nlines++ /* ignore comments */
-				}
-			case 3:
-				{ /*ignore whitespace */
-				}
-			case 4:
-				{
-					return GOLABEL
-				}
-			case 5:
-				{
-					return RETURN
-				}
-			case 6:
-				{
-					return PRINT
-				}
-			case 7:
-				{
-					return ALLOCATE
-				}
-			case 8:
-				{
-					return ARRAYERROR
-				}
-			case 9:
-				{
-					return CJUMP
-				}
-			case 10:
-				{
-					return GOTO
-				}
-			case 11:
-				{
-					return ASSIGN
-				}
-			case 12:
-				{
-					return CALL
-				}
-			case 13:
-				{
-					return TAILCALL
-				}
-			case 14:
-				{
-					nlines++
-				}
-			case 15:
-				{
-					return NAT
-				}
-			case 16:
-				{
-					return SCX
-				}
-			case 17:
-				{
-					return A
-				}
-			case 18:
-				{
-					return W
-				}
-			case 19:
-				{
-					return X
-				}
-			case 20:
-				{
-					return CMP
-				}
-			case 21:
-				{
-					return SOP
-				}
-			case 22:
-				{
-					return AOP
-				}
-			case 23:
-				{
-					return LABEL
-				}
-			case 24:
-				{
-					fmt.Printf("Found invalid input on line: %d\n", nlines)
-				}
-			default:
-				break OUTER0
-			}
-			continue
-		}
-		yylex.pop()
+func (yylex Lexer) Error(e string) {
+	panic(e)
+}
 
-	}(NewLexer(os.Stdin))
-	fmt.Printf("%d %d\n", nLines, nChars)
+// Lex runs the lexer. Always returns 0.
+// When the -s option is given, this function is not generated;
+// instead, the NN_FUN macro runs the lexer.
+func (yylex *Lexer) Lex(lval *yySymType) int {
+OUTER0:
+	for {
+		switch yylex.next(0) {
+		case 0:
+			{
+				return LPAREN
+			}
+		case 1:
+			{
+				return RPAREN
+			}
+		case 2:
+			{ /* ignore comments */
+			}
+		case 3:
+			{ /*ignore whitespace */
+			}
+		case 4:
+			{
+				return GOLABEL
+			}
+		case 5:
+			{
+				return RETURN
+			}
+		case 6:
+			{
+				return PRINT
+			}
+		case 7:
+			{
+				return ALLOCATE
+			}
+		case 8:
+			{
+				return ARRAYERROR
+			}
+		case 9:
+			{
+				return CJUMP
+			}
+		case 10:
+			{
+				return GOTO
+			}
+		case 11:
+			{
+				return ASSIGN
+			}
+		case 12:
+			{
+				return CALL
+			}
+		case 13:
+			{
+				return TAILCALL
+			}
+		case 14:
+			{
+			}
+		case 15:
+			{
+				lval.n, _ = strconv.Atoi(yylex.Text())
+				return NAT
+			}
+		case 16:
+			{
+				lval.n, _ = strconv.Atoi(yylex.Text())
+				return NUM
+			}
+		case 17:
+			{
+				lval.s = yylex.Text()
+				return RCX
+			}
+		case 18:
+			{
+				lval.s = yylex.Text()
+				return ARG
+			}
+		case 19:
+			{
+				lval.s = yylex.Text()
+				return W
+			}
+		case 20:
+			{
+				lval.s = yylex.Text()
+				return X
+			}
+		case 21:
+			{
+				lval.s = yylex.Text()
+				return CMP
+			}
+		case 22:
+			{
+				lval.s = yylex.Text()
+				return SOP
+			}
+		case 23:
+			{
+				lval.s = yylex.Text()
+				return AOP
+			}
+		case 24:
+			{
+				lval.s = yylex.Text()
+				return LABEL
+			}
+		case 25:
+			{
+				fmt.Printf("Found invalid input on line: %d\n", yylex.Line())
+			}
+		default:
+			break OUTER0
+		}
+		continue
+	}
+	yylex.pop()
+
+	return 0
+}
+func main() {
+	lex := NewLexer(os.Stdin)
+	yyParse(lex)
 }

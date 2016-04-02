@@ -1,0 +1,41 @@
+/\(/		{ return LPAREN }
+/\)/		{ return RPAREN }
+/;[a-zA-Z0-9_]*$/ {  /* ignore comments */ }
+/[ \t]+/	{ /*ignore whitespace */ }
+
+/:go/		{ return GOLABEL }
+/return/	{ return RETURN }
+/print/	{ return PRINT }
+/allocate/	{ return ALLOCATE }
+/array-error/	{ return ARRAYERROR }
+/cjump/	{ return CJUMP }
+/goto/	{ return GOTO }
+/<-/	{ return ASSIGN }
+/call/ { return CALL }
+/tail-call/	{ return TAILCALL }
+
+/\n/	{ }
+
+/0|([1-9][0-9]*)/	{ lval.n,_ = strconv.Atoi(yylex.Text()); return NAT }
+/-[1-9][0-9]*/   { lval.n,_ = strconv.Atoi(yylex.Text()); return NUM }
+/rcx/	{ lval.s = yylex.Text(); return RCX }
+/(rdi)|(rsi)|(rdx)|(r8)|(r9)/		{ lval.s = yylex.Text(); return ARG }
+/(rax)|(rbx)|(rbp)|(r10)|(r11)|(r12)|(r13)|(r14)|(r15)/	{ lval.s = yylex.Text(); return W}
+/rsp/		{ lval.s = yylex.Text(); return X }
+/(<=?)|=/		{ lval.s = yylex.Text(); return CMP }
+/(<<=)|(>>=)/	{ lval.s = yylex.Text(); return SOP }
+/(\+=)|(-=)|(\*=)|(&=)/	{ lval.s = yylex.Text(); return AOP }
+/^:[A-ZA-Z_][A-ZA-Z_0-9]*$/		{ lval.s = yylex.Text(); return LABEL }
+/./	{ fmt.Printf("Found invalid input on line: %d\n", yylex.Line()) }
+
+//
+
+
+package main
+import ("fmt";"os";"strconv")
+
+
+func main() {
+  lex := NewLexer(os.Stdin)
+  yyParse(lex)
+}
