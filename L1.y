@@ -29,6 +29,7 @@ import (
 %token PRINT
 %token RETURN
 %token RSP
+%token RCX
 %union { NUM int}
 
 %%
@@ -72,13 +73,14 @@ t	: x {}
 ;
 
 x	:CALLEEREG {}
-	|
+    |RSP
+
 ;
 
 u	:CALLEEREG {}
 	|LABEL {}
 ;
 
-sx: RSP {}
+sx: RCX {}
 ;
 %%
