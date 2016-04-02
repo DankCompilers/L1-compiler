@@ -1,5 +1,5 @@
-/(/		{ return LPAREN }
-/)/		{ return RPAREN }
+/\(/		{ return LPAREN }
+/\)/		{ return RPAREN }
 /;[a-zA-Z0-9_]*$/ { nlines++  /* ignore comments */ }
 /[ \t]+/	{ /*ignore whitespace */ }
 
@@ -18,25 +18,23 @@
 
 /[1-9][0-9]*/	{ return NAT }
 /rcx/	{ return SCX }
-/(rdi)|(rsi)|(rdx)|(r8)|(r9)		{  return A }
-/(rax)|(rbx)|(rbp)|(r10)|(r11)|(r12|(r13)|(r14)|(r15)		{ return W}
+/(rdi)|(rsi)|(rdx)|(r8)|(r9)/		{  return A }
+/(rax)|(rbx)|(rbp)|(r10)|(r11)|(r12)|(r13)|(r14)|(r15)/	{ return W}
 /rsp/		{ return X }
 /(<=?)|=/		{ return CMP }
-/(<<=)|(>>=)	{ return SOP }
-/(+=)|(-=)|(*=)|(&=)/	{ return AOP }
+/(<<=)|(>>=)/	{ return SOP }
+/(\+=)|(-=)|(\*=)|(&=)/	{ return AOP }
 /^:[A-ZA-Z_][A-ZA-Z_0-9]*$/		{ return LABEL }
 /./	{ fmt.Printf("Found invalid input on line: %d\n", nlines) }
 
 //
 
 
-package compiler
-
+package main
 import ("fmt";"os")
 
-func yylex(filename string) {
-	nlines = 0
-	lex := NewLexer(os.Stdin)
-	txt = func() string { return lex.Text() }
-	NNFun(lex)
+func main() {
+  var nLines, nChars int
+  NN_FUN(NewLexer(os.Stdin))
+  fmt.Printf("%d %d\n", nLines, nChars)
 }
