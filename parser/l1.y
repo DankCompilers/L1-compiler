@@ -24,36 +24,50 @@ package main
 %token ASSIGN MEM
 %token RSP RCX
 %token X W ARG
-%type <node> program w u t INPUT sx NAT NUM LABEL MEM ASSIGN CMP RETURN TAILCALL
+%type <node> program w u t INPUT sx NAT NUM LABEL MEM ASSIGN CMP RETURN TAILCALL subProgram
+%type <node> func
 %%
 
-program: LPAREN LABEL subProgram RPAREN {$$ =newProgrammingNode($2,$3)
+program: LPAREN ':' LABEL subProgram RPAREN {$$ =newProgrammingNode($3,$4)
 										 cast(yylex).SetAstRoot}
 
-subProgram: func
-	| subProgram func
+subProgram: func {}
+	| subProgram func {}
 
 func:
-	   LPAREN LABEL NAT NAT subFunc RPAREN {$$=newFunctionNode($2,)}
+	   LPAREN LABEL NAT NAT subFunc RPAREN {$$=newFunctionNode($2,$3,$4,$5)}
 ;
 
 subFunc: inst {}
 	| subFunc inst {}
 ;
 
-inst: LPAREN innerinst RPAREN {}
+inst: LPAREN innerinst RPAREN {$$=makeInstanceNode("Instance", $1,$2,$3)}
 
-innerinst: ASSIGN_TO_MEM {}
-		   MEMTOREG {}
-		|  VALTOMEM {}
-		|  MEM_ASOP_INPUT {}
-		|  w ASSIGN t CMP t {}
-		|  LABEL {}
-		|  GOTOLABEL {}
-		|  SYSCALLS {}
-		|  JUMPCMP {}
-		|  TAIL {}
-		|  RETURN {}
+;
+
+innerinst: ASSIGN_TO_MEM {$$=makeInnerinstNode($1)}
+
+		   MEMTOREG {$$=makeInnerinstNode($1)}
+
+		|  VALTOMEM {$$=makeInnerinstNode($1)}
+
+		|  MEM_ASOP_INPUT {$$=makeInnerinstNode($1)}
+
+		|  ASSIGN_CMP {$$=makeInnerinstNode($1)}
+
+		|  LABEL {$$=makeInnerinstNode($1)}
+
+		|  GOTOLABEL {$$=makeInnerinstNode($1)}
+
+		|  SYSCALLS {$$=makeInnerinstNode($1)}
+
+		|  JUMPCMP {$$=makeInnerinstNode($1)}
+
+		|  TAIL {$$=makeInnerinstNode($1)}
+
+		|  RETURN {$$=makeInnerinstNode($1)}
+
 ;
 
 ASSIGN_CMP: w ASSIGN t CMP t {}
@@ -88,12 +102,12 @@ VALTOMEM:  LPAREN MEM x NUM RPAREN ASSIGN s {}
 
 ;
 
-SYSCALLS: CALL SYSFUNC INPUT {}
+SYSCALLS: CALL SYSFUNC INPUT {$$makeCALLnode=($1,$2,$3)}
 
 ;
 
-ASOP: AOP {}
-	  SOP {}
+ASOP	: AOP {$$=makeTokenNode($1)}
+		  SOP {$$=makeTokenNOde($1)}
 ;
 
 INTOASOP: t {}
@@ -107,13 +121,13 @@ SYSFUNC: ALLOCATE {}
 		|u {}
 ;
 
-INPUT	:  NAT {}
-		|  '2' {}
-		|  '1' {}
+INPUT	:  NAT {$$=makeTokenNode($1)}
+		|  '2' {$$=makeTokenNode($1)}
+		|  '1' {$$=makeTokenNode($1)}
 ;
 
 u	: w {}
-	| LABEL {}
+	| LABEL {$$=makeTokenNode($1)}
 ;
 
 t	: x {}
@@ -125,22 +139,22 @@ s	:  x {}
 	| LABEL {}
 ;
 
-x	: X {}
-	| w {}
+x	: RSP {$$=makeTokenNode($1)}
+	| w   {}
 ;
 
 w	: W {}
 	| a {}
 ;
 
-a	: ARG {}
+a	: ARG {$$=makeTokenNode($1)}
 	| sx {}
 ;
 
-sx	: RCX {}
+sx	: RCX {$$=makeTokenNode($1)}
 
 ;
 
-num	: 	NUM {}
-	|	NAT {}
+num	: 	NUM {$$=makeTokenNode($1)}
+	|	NAT {$$=makeTokenNode($1)}
 %%
