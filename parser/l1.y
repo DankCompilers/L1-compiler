@@ -43,30 +43,62 @@ subFunc: inst {}
 
 inst: LPAREN innerinst RPAREN {}
 
-innerinst: w ASSIGN s {}
-		|  w ASSIGN LPAREN MEM x NAT RPAREN {}
-		|  LPAREN MEM x NUM RPAREN ASSIGN s  {}
-		|  w ASOP INTOASOP {}
+innerinst: ASSIGN_TO_MEM {}
+		   MEMTOREG {}
+		|  VALTOMEM {}
+		|  MEM_ASOP_INPUT {}
 		|  w ASSIGN t CMP t {}
 		|  LABEL {}
-		|  GOTO LABEL {}
-		|  CJUMP t CMP t LABEL LABEL {}
+		|  GOTOLABEL {}
 		|  SYSCALLS {}
-		|  TAILCALL u NUM {}
+		|  JUMPCMP {}
+		|  TAIL {}
 		|  RETURN {}
+;
+
+ASSIGN_CMP: w ASSIGN t CMP t {}
+
+;
+
+TAIL: TAILCALL u NUM {}
+
+;
+
+JUMPCMP	 : CJUMP t CMP t LABEL LABEL {}
+
+;
+
+GOTOLABEL: GOTO LABEL {}
+
+;
+
+ASSIGN_TO_MEM: w ASSIGN s {}
+
+;
+
+MEM_ASOP_INPUT: w ASOP INTOASOP {}
+
+;
+
+MEMTOREG:  w ASSIGN LPAREN MEM x NAT RPAREN {}
+
+;
+
+VALTOMEM:  LPAREN MEM x NUM RPAREN ASSIGN s {}
+
 ;
 
 SYSCALLS: CALL SYSFUNC INPUT {}
 
 ;
 
-ASOP: AOP
-	  SOP
+ASOP: AOP {}
+	  SOP {}
 ;
 
-INTOASOP: t
-		| sx
-		| NUM
+INTOASOP: t {}
+		| sx {}
+		| NUM {}
 ;
 
 SYSFUNC: ALLOCATE {}
@@ -75,16 +107,16 @@ SYSFUNC: ALLOCATE {}
 		|u {}
 ;
 
-INPUT:  NAT {}
-		'2' {}
-		'1' {}
+INPUT	:  NAT {}
+		|  '2' {}
+		|  '1' {}
 ;
 
-u: w {}
+u	: w {}
 	| LABEL {}
 ;
 
-t: x {}
+t	: x {}
 	| num {}
 ;
 
@@ -97,17 +129,18 @@ x	: X {}
 	| w {}
 ;
 
-w:  W {}
+w	: W {}
 	| a {}
+;
 
-
-a: ARG {}
+a	: ARG {}
 	| sx {}
 ;
 
-sx: RCX {}
+sx	: RCX {}
+
 ;
 
-num: 	NUM {}
+num	: 	NUM {}
 	|	NAT {}
 %%
