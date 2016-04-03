@@ -40,7 +40,7 @@ func (c *Compiler) parse(filename string) error {
 /// Can only be called after a valid Parsing
 func (c *Compiler) generateCode() error {
   c.codegen = L1toASMGenerator();
-  err := c.codegen.CompTopScope(c.ast)
+  err := c.codegen.beginCompiler(c.ast)
   return err
 }
 

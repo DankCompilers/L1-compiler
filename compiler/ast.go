@@ -35,6 +35,11 @@ func makeMEMASOPINPUTnode() Node {
 
 }
 
+func newAssignNode(mem Node, value Node) Node {
+	b = ParseTreeNode ()
+	b.children[].append(mem,value)
+
+}
 func makeASSINGNMENTnode() Node {
 
 }
