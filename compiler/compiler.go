@@ -13,6 +13,10 @@ func NewCompiler() *Compiler {
   return &Compiler{}
 }
 
+/// Used in parser to set Root that everything will be attached to
+func (c *Compiler) SetAstRoot(root Node) {
+	c.ast = root
+}
 
 /// Performs Scan and Parsing on provided filepath and builds the AST in memory
 /// Only valid for one program at a time. Once the compiler is used again,

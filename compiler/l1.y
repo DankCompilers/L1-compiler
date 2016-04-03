@@ -29,34 +29,40 @@ package L1
 %type <node> func
 %%
 
-program: LPAREN GOLABEL subProgram RPAREN
+program: LPAREN LABEL subProgram RPAREN
 {
-	$$ = newProgramNode($2,$3)
+	fmt.Printf("Detected program: %q\n", $2)
+	$$ = newProgramNode($2, $3)
 	cast(yylex).SetAstRoot($$)
 }
 
 subProgram: func
 {
+	fmt.Printf("Detected end subprogram\n")
 	$$ = newSubProgramNode($1, nil)
 }
 | func subProgram
 {
+	fmt.Printf("Detected subprogram\n")
 	$$ = newSubProgramNode($1, $2)
 }
 
 
 func: LPAREN LABEL NAT NAT subFunc RPAREN
 {
+	fmt.Printf("Detected func: %q\n", $2)
 	$$ = newFunctionNode($2, $3, $4, $5)
 }
 
 
 subFunc: instruction
 {
+	fmt.Printf("Detected end instruction\n")
 	$$ = newInstructionNode($1, nil)
 }
 |  instruction subFunc
 {
+	fmt.Printf("Detected instruction\n")
 	$$ = newInstructionNode($1, $2)
 }
 
@@ -69,26 +75,32 @@ instruction: LPAREN innerinstruction RPAREN
 
 innerinstruction: w ASSIGN s
 {
+	fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $3)
 }
 |	w ASSIGN mem
 {
+	fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $3)
 }
 | mem ASSIGN s
 {
+	fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $2)
 }
 | w aop t
 {
+	fmt.Printf("Detected aop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w sop sx
 {
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w sop num
 {
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 |  w ASSIGN cmp_op
@@ -97,9 +109,10 @@ innerinstruction: w ASSIGN s
 }
 |  GOTOLABEL LABEL
 {
+	fmt.Printf("Detected goto: %q\n", $2)
 	$$ = newGotoNode($2)
 }
-| CJUMP cmp_op label label
+| CJUMP cmp_op LABEL LABEL
 {
 	$$ = newCjumpNode($2, $3, $4)
 }

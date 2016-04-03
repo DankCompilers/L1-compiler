@@ -224,6 +224,18 @@ func newCmpopNode(op string, l, r Node) CmpopNode {
 	return p
 }
 
+func newCjumpNode(cmpop Node, trueLabel, falseLabel string) CjumpNode{
+	p := CjumpNode{
+		nodeId : count++,
+		TrueLabel 	: trueLabel,
+		FalseLabel 	: falseLabel
+	}
+
+	p.AppendChild(cmpop)
+
+	return p
+}
+
 
 func newMemNode(x TokenNode, offset int) MemNode {
 	p := &MemNode{
