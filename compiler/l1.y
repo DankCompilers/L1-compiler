@@ -154,7 +154,7 @@ cmp_op: t CMP t
 
 mem: LPAREN MEM x NAT8 RPAREN
 {
-	$$ = newMemNode($2, )
+	$$ = newMemNode($2, $4)
 }
 
 
