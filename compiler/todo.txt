@@ -1,0 +1,1 @@
+Make lexer reserve keywords such as print, allocate, etc. from labels

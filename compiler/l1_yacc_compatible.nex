@@ -14,12 +14,24 @@
 /call/ { return CALL }
 /tail-call/	{ return TAILCALL }
 
-/\n/	{ }
+/\n/	{ /* ignore */}
 
-/0|([1-9][0-9]*)/	{ lval.n,_ = strconv.Atoi(yylex.Text()); return NAT }
-/-[1-9][0-9]*/   { lval.n,_ = strconv.Atoi(yylex.Text()); return NUM }
+/0|-?([1-9][0-9]*)/	{
+                      lval.n,_ = strconv.Atoi(yylex.Text());
+                      if lval.n >= 0 {
+                        if lval.n <= 6 {
+                          return NAT6
+                        } else if lval.n <= 255 {
+                          return NAT8
+                        } else {
+                          return NAT
+                        }
+                      } else {
+                        return NEG
+                      }
+                    }
 /rcx/	{ lval.s = yylex.Text(); return RCX }
-/(rdi)|(rsi)|(rdx)|(r8)|(r9)/		{ lval.s = yylex.Text(); return ARG }
+/(rdi)|(rsi)|(rdx)|(r8)|(r9)/		{ lval.s = yylex.Text(); return A }
 /(rax)|(rbx)|(rbp)|(r10)|(r11)|(r12)|(r13)|(r14)|(r15)/	{ lval.s = yylex.Text(); return W}
 /rsp/		{ lval.s = yylex.Text(); return X }
 /(<=?)|=/		{ lval.s = yylex.Text(); return CMP }
@@ -31,11 +43,10 @@
 //
 
 
-package main
-import ("fmt";"os";"strconv")
+package L1
+import ("fmt";"strconv")
 
 
-func main() {
-  lex := NewLexer(os.Stdin)
-  yyParse(lex)
+func (yylex Lexer) Error(e string) {
+  yylex.p.err = fmt.Sprintf(":%v:%v: error: %q undeclared", yylex.Line()+1, yylex.Column(), yylex.Text())
 }

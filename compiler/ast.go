@@ -1,4 +1,4 @@
-package L1ast
+package L1
 
 type Node interface {
 	AppendChild(Node)
