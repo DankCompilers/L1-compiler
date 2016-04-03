@@ -8,14 +8,14 @@ import (
 )
 
 type codeGenerator interface {
-	beginProcess(Node) error
+	beginCompiler(Node) error
 }
 
 type AsmCodeGenerator struct {
 	writer *bufio.Writer
 }
 
-func newAsmCodeGenerator() *AsmCodeGenerator {
+func L1toASMGenerator() *AsmCodeGenerator {
 	return &AsmCodeGenerator{}
 }
 
@@ -35,7 +35,20 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		}
 		c.compNode(n.Child)
 
-	case *subprog:
+	case *newAssignNode:
+		mem, value := n.children[:]
+		c.writer.WriteString("movq $%d, %s", value, mem)
+
+	case *newOpNode:
+		mem, value := n.children[:]
+
+		if self := n.self; self == ">>=" {
+			instruct := "sarq"
+		} else {
+			instruct := "salq"
+		}
+
+		c.writer.WriteString("%s %s, %s", instruct, value, mem)
 
 	}
 }
@@ -43,7 +56,7 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 //func (c *AsmCodeGenerator) WriteToFile(line string){
 //}
 
-func (c *AsmCodeGenerator) beginProcess(ast Node) error {
+func (c *AsmCodeGenerator) beginCompiler(ast Node) error {
 	file, err := os.Create("L1generatedASM.txt")
 	defer file.Close()
 	if err != nil {
