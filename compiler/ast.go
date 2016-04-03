@@ -261,7 +261,7 @@ func newSysCallNode(label string, arity int) SysCallNode {
 	p := &SysCallNode{
 		nodeId: count,
 		Label: label,
-		Arity: arity
+		Arity: uint(arity),
 	}
 	count++
 
@@ -272,7 +272,7 @@ func newSysCallNode(label string, arity int) SysCallNode {
 func newCallNode(dest Node, arity int) Node {
 	p := &CallNode{
 		nodeId: count,
-		Arity: uint(arity)
+		Arity: uint(arity),
 	}
 
 	p.AppendChild(dest)
