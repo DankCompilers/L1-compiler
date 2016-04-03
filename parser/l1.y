@@ -70,35 +70,35 @@ innerinst: ASSIGN_TO_MEM {$$=makeInnerinstNode($1)}
 
 ;
 
-ASSIGN_CMP: w ASSIGN t CMP t {}
+ASSIGN_CMP: w ASSIGN t CMP t {$$=makeASSIGN_CMPnode($1,$2,$3,$4,$5)}
 
 ;
 
-TAIL: TAILCALL u NUM {}
+TAIL: TAILCALL u NUM {$$=makeTailCallnode($1,$2,$3)}
 
 ;
 
-JUMPCMP	 : CJUMP t CMP t LABEL LABEL {}
+JUMPCMP	 : CJUMP t CMP t LABEL LABEL {$$=makeJUMPCMPnode($1,$2,$3,$4,$5,$6)}
 
 ;
 
-GOTOLABEL: GOTO LABEL {}
+GOTOLABEL: GOTO LABEL {$$=makeGOTOnode($1,$2)}
 
 ;
 
-ASSIGN_TO_MEM: w ASSIGN s {}
+ASSIGN_TO_MEM: w ASSIGN s {$$=makeASSIGNMEMnode($1,$2,$3)}
 
 ;
 
-MEM_ASOP_INPUT: w ASOP INTOASOP {}
+MEM_ASOP_INPUT: w ASOP INTOASOP {$$=makeMEMASOPINPUTnode($1,$2,$3)}
 
 ;
 
-MEMTOREG:  w ASSIGN LPAREN MEM x NAT RPAREN {}
+MEMTOREG:  w ASSIGN LPAREN MEM x NAT RPAREN {$$=makeMEMTOREGnode($1,$2,$3,$4,$5,$6,$7)}
 
 ;
 
-VALTOMEM:  LPAREN MEM x NUM RPAREN ASSIGN s {}
+VALTOMEM:  LPAREN MEM x NUM RPAREN ASSIGN s {$$=makeVALTOMEMnode($1,$2,$3,$4,$5,$6,$7)}
 
 ;
 
@@ -112,13 +112,16 @@ ASOP	: AOP {$$=makeTokenNode($1)}
 
 INTOASOP: t {}
 		| sx {}
-		| NUM {}
+		| NUM {$$=makeTokenNode($1)}
 ;
 
-SYSFUNC: ALLOCATE {}
-		|ARRAYERROR {}
-		|PRINT {}
-		|u {}
+SYSFUNC: ALLOCATE {$$makeSYSFUNCnode($1)}
+		|ARRAYERROR {$$makeSYSFUNCnode($1)}
+
+		|PRINT {$$makeSYSFUNCnode($1)}
+
+		|u {$$makeSYSFUNCnode($1)}
+
 ;
 
 INPUT	:  NAT {$$=makeTokenNode($1)}
@@ -136,7 +139,7 @@ t	: x {}
 
 s	:  x {}
 	| num {}
-	| LABEL {}
+	| LABEL {$$=makeTokenNode($1)}
 ;
 
 x	: RSP {$$=makeTokenNode($1)}
