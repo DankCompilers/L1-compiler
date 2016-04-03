@@ -28,6 +28,12 @@ eightBitEquiv := map[string]string{
 "rsi" : "sil",
 }
 
+func labelToASM(label string) string {
+
+		newLabel := strings.TrimLeft(label, ':')
+		newLabel := '_' + newString
+}
+
 type codeGenerator interface {
 	beginCompiler(Node) error
 }
@@ -47,12 +53,16 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 	}
 
 	switch n := node.(type) {
+
 	case *ProgramNode:
+		c.writer.WriteString(".text \n")
+		c.writer.WriteString(".globl go \n")
+		c.writer.Writestring("go: \n")
 		for _, reg := range calleeArray {
 			c.writer.WriteString("push  %%s \n", reg)
 		}
 
-		c.compNode(n.Child)
+		c.compNode(n.children[0])
 
 		for reg :=len(calleeArray) - 1; i>=0; i-- {
 			regToWrite := calleeArray[i]
@@ -60,11 +70,11 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		}
 		c.writer.WriteString("retq \n")
 
-	case *newAssignNode:
+	case *AssignNode:
 		mem, value := n.children[:]
 		c.writer.WriteString("movq $%d, %s \n", value, mem)
 
-	case *newOpNode:
+	case *OpNode:
 		mem, value := n.children[:]
 
 		if self := n.self; self == ">>=" {
@@ -80,13 +90,20 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		lowerReg = eightBitEquiv[mem]
 		c.writer.WriteString("%s %s, %s", instruct, value, lowerReg)
 
-	case *newCallNode:
+	case *CallNode:
 
 		u,NAT = n.children[:]
 		u := u.value
 		NAT := NAT
 
+	case *LabelNode:
 
+		newString := labelToASM(n.label)
+		c.writer.WriteString(newString + "\n")
+
+	case *GotoNode:
+		newString := labelToASM(n.label)
+		c.writer.WriteString("jmp %s", newString)
 
 	}
 }
