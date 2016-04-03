@@ -5,19 +5,19 @@ package L1
 		"io"
 		"unicode/utf8"
 		"fmt"
+		"strconv"
 )*/
 
 %}
 
 %union {
-	n int
 	s string
 	node Node
 }
 
 
 %token <s> LABEL GOLABEL
-%token <n> NEG NAT NAT6 NAT8
+%token <s> NEG NAT NAT6 NAT8
 %token <s> AOP SOP CMP
 %token CALL CJUMP TAILCALL RETURN GOTO
 %token LPAREN RPAREN
@@ -29,7 +29,7 @@ package L1
 %type <node> func
 %%
 
-program: LPAREN LABEL subProgram RPAREN
+program: LPAREN GOLABEL subProgram RPAREN
 {
 	$$ = newProgramNode($2,$3)
 	cast(yylex).SetAstRoot($$)
@@ -47,7 +47,7 @@ subProgram: func
 
 func: LPAREN LABEL NAT NAT subFunc RPAREN
 {
-	$$ = newFunctionNode($2,$3, $4, $5)
+	$$ = newFunctionNode($2, $3, $4, $5)
 }
 
 
@@ -73,11 +73,11 @@ innerinstruction: w ASSIGN s
 }
 |	w ASSIGN mem
 {
-	$$ = makeAssignNode($1, $3)
+	$$ = newAssignNode($1, $3)
 }
 | mem ASSIGN s
 {
-	$$ = makeAssignNode($1, $2)
+	$$ = newAssignNode($1, $2)
 }
 | w aop t
 {
@@ -95,13 +95,9 @@ innerinstruction: w ASSIGN s
 {
 	$$ = newAssignNode($1, $3)
 }
-|  label
+|  GOTOLABEL LABEL
 {
-	$$ = $1
-}
-|  GOTOLABEL label
-{
-	$$ = makeGotoNode($2)
+	$$ = newGotoNode($2)
 }
 | CJUMP cmp_op label label
 {
@@ -123,26 +119,30 @@ innerinstruction: w ASSIGN s
 {
 	$$ = newReturnNode()
 }
+|  label
+{
+	$$ = $1
+}
 
 
 
 tailcall: TAILCALL u NAT6
 {
-	$$ = makeTailCallnode($2, $3)
+	$$ = newTailcallNode($2, $3)
 }
 
 
 SYSCALLS: CALL PRINT '1'
 {
-	$$ = newSysCallNode($2)
+	$$ = newSysCallNode($2, $3)
 }
 | CALL ALLOCATE '2'
 {
-	$$ = newSysCallNode($2)
+	$$ = newSysCallNode($2, $3)
 }
 | CALL ARRAYERROR '2'
 {
-	$$= newSysCallNode($2)
+	$$= newSysCallNode($2, $3)
 }
 
 
@@ -154,19 +154,19 @@ cmp_op: t CMP t
 
 mem: LPAREN MEM x NAT8 RPAREN
 {
-	$$ = makeMemNode($2, $3)
+	$$ = newMemNode($2, )
 }
 
 
 aop: AOP
 {
-	$$ = makeTokenNode($1)
+	$$ = $1
 }
 
 
 sop: SOP
 {
-	$$ = makeTokenNode($1)
+	$$ = $1
 }
 
 u: 	w 		{ $$ = $1 }
@@ -181,29 +181,30 @@ s:  x  { $$ = $1 }
 	| num { $$ = $1 }
 	| label { $$ = $1 }
 
-x: RSP { $$ = makeTokenNode($1) }
+x: RSP { $$ = newTokenNode($1) }
 	| w   { $$ = $1 }
 
 
-w: W { $$ = makeTokenNode($1) }
+w: W { $$ = newTokenNode($1) }
 	| a { $$ = $1 }
 
 
-a: A { $$ = makeTokenNode($1) }
+a: A { $$ = newTokenNode($1) }
 	| sx { $$ = $1 }
 
 
-sx: RCX { $$ = makeTokenNode($1) }
+sx: RCX { $$ = newTokenNode($1) }
 
 
-num: 	NAT { $$ = makeTokenNode($1) }
-	|	NEG { $$ = makeTokenNode($1) }
-	| NAT6 { $$ = makeTokenNode($1) }
-	| NAT8 { $$ = makeTokenNode($1) }
+num: 	NAT { $$ = newTokenNode(strconv.Itoa($1)) }
+	|	NEG 	{ $$ = newTokenNode(strconv.Itoa($1)) }
+	| NAT6 	{ $$ = newTokenNode(strconv.Itoa($1)) }
+	| NAT8 	{ $$ = newTokenNode(strconv.Itoa($1)) }
 
 
 label: LABEL
 {
-	$$ = makeLabelNode($1)
+	$$ = newLabelNode($1)
 }
 %%
+func cast(y yyLexer) *Compiler { return y.(*Lexer).p }

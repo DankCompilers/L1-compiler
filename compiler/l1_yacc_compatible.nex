@@ -3,7 +3,7 @@
 /;[a-zA-Z0-9_]*$/ {  /* ignore comments */ }
 /[ \t]+/	{ /*ignore whitespace */ }
 
-/:go/		{ return GOLABEL }
+/:go/		{ lval.s = yylex.Text(); return GOLABEL }
 /return/	{ return RETURN }
 /print/	{ return PRINT }
 /allocate/	{ return ALLOCATE }
