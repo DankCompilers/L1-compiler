@@ -141,9 +141,9 @@ type TokenNode struct {
 
 
 func newProgramNode(func_label string, rest Node) ProgramNode {
-	p := &ProgramNode {
+	p := &ProgramNode{
 		nodeId	: count,
-		Label		: func_label
+		Label		: func_label,
 	}
 	p.AppendChild(rest)
 	count++
@@ -167,7 +167,7 @@ func newFunctionNode(label string, arity int, locals int, rest Node) FunctionNod
 		nodeId: count,
 		Label: label,
 		Arity: uint(arity),
-		NumLocals: uint(locals)
+		NumLocals: uint(locals),
 	}
 
 	p.AppendChild(rest)
@@ -200,7 +200,7 @@ func newAssignNode(l, r Node) AssignNode {
 func newOpNode(op string, l, r Node) OpNode {
 	p := &OpNode{
 		nodeId: count,
-		Operator: op
+		Operator: op,
 	}
 
 	p.AppendChild(l)
@@ -214,7 +214,7 @@ func newOpNode(op string, l, r Node) OpNode {
 func newCmpopNode(op string, l, r Node) CmpopNode {
 	p := &CmpopNode{
 		nodeId: count,
-		Operator: op
+		Operator: op,
 	}
 
 	p.AppendChild(l)
@@ -226,11 +226,11 @@ func newCmpopNode(op string, l, r Node) CmpopNode {
 
 func newCjumpNode(cmpop Node, trueLabel, falseLabel string) CjumpNode{
 	p := CjumpNode{
-		nodeId : count++,
+		nodeId : count,
 		TrueLabel 	: trueLabel,
-		FalseLabel 	: falseLabel
+		FalseLabel 	: falseLabel,
 	}
-
+	count++
 	p.AppendChild(cmpop)
 
 	return p
@@ -241,7 +241,7 @@ func newMemNode(x TokenNode, offset int) MemNode {
 	p := &MemNode{
 		nodeId: count,
 		X: x.Value,
-		N8: uint(offset)
+		N8: uint(offset),
 	}
 
 	count++
@@ -251,17 +251,20 @@ func newMemNode(x TokenNode, offset int) MemNode {
 
 
 func newLabelNode(label string) LabelNode {
-	return &LabelNode{
-		nodeId	: count++,
-		Label		: label
+	p := &LabelNode{
+		nodeId	: count,
+		Label		: label,
 	}
+	count++
+
+	return p
 }
 
 
 func newGotoNode(label string) GotoNode {
 	p := &GotoNode{
 		nodeId: count,
-		Label: label
+		Label: label,
 	}
 	count++
 
@@ -295,10 +298,11 @@ func newCallNode(dest Node, arity int) Node {
 
 
 func newTailcallNode(dest Node, arity int) TailcallNode {
-	p := SysCallNode{
+	p := &SysCallNode{
 		nodeId: count,
-		Arity: uint(arity)
+		Arity: uint(arity),
 	}
+
 	p.AppendChild(dest)
 	count++
 
@@ -307,15 +311,18 @@ func newTailcallNode(dest Node, arity int) TailcallNode {
 
 
 func newReturnNode() Node {
-	p := SysCallNode{ nodeId: count }
+	p := &SysCallNode{ nodeId: count }
 	count++
 
 	return p
 }
 
 func newTokenNode(token string) Node {
-	return LabelNode{
-		nodeId	: count++,
-		Value		: token
+	p := &LabelNode{
+		nodeId	: count,
+		Value		: token,
 	}
+	count++
+
+	return p
 }

@@ -1,6 +1,6 @@
 package L1
 
-import os ("fmt"; "os")
+import ("fmt"; "os")
 
 type Compiler struct {
   err string

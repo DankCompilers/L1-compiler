@@ -25,8 +25,7 @@ package L1
 %token ASSIGN MEM
 %token <s> RSP RCX
 %token <s> X W A
-%type <node> program w u t sx num NAT NAT6 NAT8 NEG label MEM ASSIGN CMP RETURN TAILCALL subProgram
-%type <node> func
+%type <node> program subProgram func subFunc instruction innerinstruction mem cmp_op syscalls s w u t x a sx num label
 %%
 
 program: LPAREN LABEL subProgram RPAREN
@@ -86,19 +85,19 @@ innerinstruction: w ASSIGN s
 | mem ASSIGN s
 {
 	fmt.Printf("Detected assign \n")
-	$$ = newAssignNode($1, $2)
+	$$ = newAssignNode($1, $3)
 }
-| w aop t
+| w AOP t
 {
 	fmt.Printf("Detected aop \n")
 	$$ = newOpNode($2, $1, $3)
 }
-| w sop sx
+| w SOP sx
 {
 	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
-| w sop num
+| w SOP num
 {
 	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
@@ -107,7 +106,7 @@ innerinstruction: w ASSIGN s
 {
 	$$ = newAssignNode($1, $3)
 }
-|  GOTOLABEL LABEL
+|  GOTO LABEL
 {
 	fmt.Printf("Detected goto: %q\n", $2)
 	$$ = newGotoNode($2)
@@ -124,9 +123,9 @@ innerinstruction: w ASSIGN s
 {
 	$$ = newCallNode($2, $3)
 }
-|  tailcall
+|  TAILCALL u NAT6
 {
-	$$ = $1
+	$$ = newTailcallNode($2, $3)
 }
 |  RETURN
 {
@@ -139,23 +138,17 @@ innerinstruction: w ASSIGN s
 
 
 
-tailcall: TAILCALL u NAT6
+syscalls: CALL PRINT '1'
 {
-	$$ = newTailcallNode($2, $3)
-}
-
-
-SYSCALLS: CALL PRINT '1'
-{
-	$$ = newSysCallNode($2, $3)
+	$$ = newSysCallNode($2, 1)
 }
 | CALL ALLOCATE '2'
 {
-	$$ = newSysCallNode($2, $3)
+	$$ = newSysCallNode($2, 2)
 }
 | CALL ARRAYERROR '2'
 {
-	$$= newSysCallNode($2, $3)
+	$$= newSysCallNode($2, 3)
 }
 
 
@@ -167,20 +160,9 @@ cmp_op: t CMP t
 
 mem: LPAREN MEM x NAT8 RPAREN
 {
-	$$ = newMemNode($2, $4)
+	$$ = newMemNode($3, $4)
 }
 
-
-aop: AOP
-{
-	$$ = $1
-}
-
-
-sop: SOP
-{
-	$$ = $1
-}
 
 u: 	w 		{ $$ = $1 }
 	| label { $$ = $1	}
