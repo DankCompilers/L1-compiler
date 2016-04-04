@@ -1,8 +1,8 @@
 %{
-package L1
+package l1compiler
 
 import (
-		//"fmt"
+		"fmt"
 		"strconv"
 )
 
@@ -29,38 +29,77 @@ import (
 
 program: LPAREN LABEL subProgram RPAREN
 {
-	//fmt.Printf("Detected program: %q\n", $2)
+	fmt.Println("Detected program: %+v", $2)
 	$$ = newProgramNode($2, $3)
 	cast(yylex).SetAstRoot($$)
 }
 
 subProgram: func
 {
-	//fmt.Printf("Detected end subprogram\n")
+	fmt.Println("Detected end subprogram")
 	$$ = newSubProgramNode($1, nil)
 }
 | func subProgram
 {
-	//fmt.Printf("Detected subprogram\n")
+	fmt.Printf("Detected subprogram\n")
 	$$ = newSubProgramNode($1, $2)
 }
 
 
 func: LPAREN LABEL NAT NAT subFunc RPAREN
 {
+	fmt.Println("Detected func: %+v", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT6 NAT subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT NAT6 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT6 NAT6 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT6 NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT6 subFunc RPAREN
+{
 	//fmt.Printf("Detected func: %q\n", $2)
 	$$ = newFunctionNode($2, $3, $4, $5)
 }
 
-
 subFunc: instruction
 {
-	//fmt.Printf("Detected end instruction\n")
+	fmt.Printf("Detected end instruction\n")
 	$$ = newInstructionNode($1, nil)
 }
 |  instruction subFunc
 {
-	//fmt.Printf("Detected instruction\n")
+	fmt.Printf("Detected instruction\n")
 	$$ = newInstructionNode($1, $2)
 }
 
@@ -137,15 +176,15 @@ innerinstruction: w ASSIGN s
 
 
 
-syscalls: CALL PRINT '1'
+syscalls: CALL PRINT NAT6
 {
 	$$ = newSysCallNode($2, 1)
 }
-| CALL ALLOCATE '2'
+| CALL ALLOCATE NAT6
 {
 	$$ = newSysCallNode($2, 2)
 }
-| CALL ARRAYERROR '2'
+| CALL ARRAYERROR NAT6
 {
 	$$= newSysCallNode($2, 3)
 }
@@ -158,6 +197,10 @@ cmp_op: t CMP t
 
 
 mem: LPAREN MEM x NAT8 RPAREN
+{
+	$$ = newMemNode($3, $4)
+}
+| LPAREN MEM x NAT6 RPAREN
 {
 	$$ = newMemNode($3, $4)
 }
@@ -175,7 +218,7 @@ s:  x  { $$ = $1 }
 	| num { $$ = $1 }
 	| label { $$ = $1 }
 
-x: RSP { $$ = newTokenNode($1) }
+x: X	 { $$ = newTokenNode($1) }
 	| w   { $$ = $1 }
 
 
@@ -192,7 +235,7 @@ sx: RCX { $$ = newTokenNode($1) }
 
 num: 	NAT { $$ = newTokenNode(strconv.Itoa($1)) }
 	|	NEG 	{ $$ = newTokenNode(strconv.Itoa($1)) }
-	| NAT6 	{ $$ = newTokenNode(strconv.Itoa($1)) }
+	| NAT6 	{ fmt.Println("Yacc got NAT6"); $$ = newTokenNode(strconv.Itoa($1)) }
 	| NAT8 	{ $$ = newTokenNode(strconv.Itoa($1)) }
 
 

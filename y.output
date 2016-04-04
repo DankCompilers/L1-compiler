@@ -49,6 +49,14 @@ state 5
 
 state 6
 	func:  LPAREN.LABEL NAT NAT subFunc RPAREN 
+	func:  LPAREN.LABEL NAT6 NAT subFunc RPAREN 
+	func:  LPAREN.LABEL NAT NAT6 subFunc RPAREN 
+	func:  LPAREN.LABEL NAT6 NAT6 subFunc RPAREN 
+	func:  LPAREN.LABEL NAT8 NAT subFunc RPAREN 
+	func:  LPAREN.LABEL NAT NAT8 subFunc RPAREN 
+	func:  LPAREN.LABEL NAT8 NAT8 subFunc RPAREN 
+	func:  LPAREN.LABEL NAT6 NAT8 subFunc RPAREN 
+	func:  LPAREN.LABEL NAT8 NAT6 subFunc RPAREN 
 
 	LABEL  shift 9
 	.  error
@@ -68,87 +76,251 @@ state 8
 
 state 9
 	func:  LPAREN LABEL.NAT NAT subFunc RPAREN 
+	func:  LPAREN LABEL.NAT6 NAT subFunc RPAREN 
+	func:  LPAREN LABEL.NAT NAT6 subFunc RPAREN 
+	func:  LPAREN LABEL.NAT6 NAT6 subFunc RPAREN 
+	func:  LPAREN LABEL.NAT8 NAT subFunc RPAREN 
+	func:  LPAREN LABEL.NAT NAT8 subFunc RPAREN 
+	func:  LPAREN LABEL.NAT8 NAT8 subFunc RPAREN 
+	func:  LPAREN LABEL.NAT6 NAT8 subFunc RPAREN 
+	func:  LPAREN LABEL.NAT8 NAT6 subFunc RPAREN 
 
 	NAT  shift 10
+	NAT6  shift 11
+	NAT8  shift 12
 	.  error
 
 
 state 10
 	func:  LPAREN LABEL NAT.NAT subFunc RPAREN 
+	func:  LPAREN LABEL NAT.NAT6 subFunc RPAREN 
+	func:  LPAREN LABEL NAT.NAT8 subFunc RPAREN 
 
-	NAT  shift 11
+	NAT  shift 13
+	NAT6  shift 14
+	NAT8  shift 15
 	.  error
 
 
 state 11
-	func:  LPAREN LABEL NAT NAT.subFunc RPAREN 
+	func:  LPAREN LABEL NAT6.NAT subFunc RPAREN 
+	func:  LPAREN LABEL NAT6.NAT6 subFunc RPAREN 
+	func:  LPAREN LABEL NAT6.NAT8 subFunc RPAREN 
 
-	LPAREN  shift 14
+	NAT  shift 16
+	NAT6  shift 17
+	NAT8  shift 18
 	.  error
 
-	subFunc  goto 12
-	instruction  goto 13
 
 state 12
-	func:  LPAREN LABEL NAT NAT subFunc.RPAREN 
+	func:  LPAREN LABEL NAT8.NAT subFunc RPAREN 
+	func:  LPAREN LABEL NAT8.NAT8 subFunc RPAREN 
+	func:  LPAREN LABEL NAT8.NAT6 subFunc RPAREN 
 
-	RPAREN  shift 15
+	NAT  shift 19
+	NAT6  shift 21
+	NAT8  shift 20
 	.  error
 
 
 state 13
-	subFunc:  instruction.    (5)
-	subFunc:  instruction.subFunc 
+	func:  LPAREN LABEL NAT NAT.subFunc RPAREN 
 
-	LPAREN  shift 14
-	.  reduce 5 (src line 56)
-
-	subFunc  goto 16
-	instruction  goto 13
-
-state 14
-	instruction:  LPAREN.innerinstruction RPAREN 
-
-	LABEL  shift 30
-	CALL  shift 23
-	CJUMP  shift 21
-	TAILCALL  shift 24
-	RETURN  shift 25
-	GOTO  shift 20
-	LPAREN  shift 29
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	LPAREN  shift 24
 	.  error
 
-	innerinstruction  goto 17
-	mem  goto 19
-	syscalls  goto 22
-	w  goto 18
-	a  goto 28
-	sx  goto 32
-	label  goto 26
+	subFunc  goto 22
+	instruction  goto 23
+
+state 14
+	func:  LPAREN LABEL NAT NAT6.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 25
+	instruction  goto 23
 
 state 15
+	func:  LPAREN LABEL NAT NAT8.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 26
+	instruction  goto 23
+
+state 16
+	func:  LPAREN LABEL NAT6 NAT.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 27
+	instruction  goto 23
+
+state 17
+	func:  LPAREN LABEL NAT6 NAT6.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 28
+	instruction  goto 23
+
+state 18
+	func:  LPAREN LABEL NAT6 NAT8.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 29
+	instruction  goto 23
+
+state 19
+	func:  LPAREN LABEL NAT8 NAT.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 30
+	instruction  goto 23
+
+state 20
+	func:  LPAREN LABEL NAT8 NAT8.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 31
+	instruction  goto 23
+
+state 21
+	func:  LPAREN LABEL NAT8 NAT6.subFunc RPAREN 
+
+	LPAREN  shift 24
+	.  error
+
+	subFunc  goto 32
+	instruction  goto 23
+
+state 22
+	func:  LPAREN LABEL NAT NAT subFunc.RPAREN 
+
+	RPAREN  shift 33
+	.  error
+
+
+state 23
+	subFunc:  instruction.    (13)
+	subFunc:  instruction.subFunc 
+
+	LPAREN  shift 24
+	.  reduce 13 (src line 95)
+
+	subFunc  goto 34
+	instruction  goto 23
+
+state 24
+	instruction:  LPAREN.innerinstruction RPAREN 
+
+	LABEL  shift 48
+	CALL  shift 41
+	CJUMP  shift 39
+	TAILCALL  shift 42
+	RETURN  shift 43
+	GOTO  shift 38
+	LPAREN  shift 47
+	RCX  shift 51
+	W  shift 45
+	A  shift 49
+	.  error
+
+	innerinstruction  goto 35
+	mem  goto 37
+	syscalls  goto 40
+	w  goto 36
+	a  goto 46
+	sx  goto 50
+	label  goto 44
+
+state 25
+	func:  LPAREN LABEL NAT NAT6 subFunc.RPAREN 
+
+	RPAREN  shift 52
+	.  error
+
+
+state 26
+	func:  LPAREN LABEL NAT NAT8 subFunc.RPAREN 
+
+	RPAREN  shift 53
+	.  error
+
+
+state 27
+	func:  LPAREN LABEL NAT6 NAT subFunc.RPAREN 
+
+	RPAREN  shift 54
+	.  error
+
+
+state 28
+	func:  LPAREN LABEL NAT6 NAT6 subFunc.RPAREN 
+
+	RPAREN  shift 55
+	.  error
+
+
+state 29
+	func:  LPAREN LABEL NAT6 NAT8 subFunc.RPAREN 
+
+	RPAREN  shift 56
+	.  error
+
+
+state 30
+	func:  LPAREN LABEL NAT8 NAT subFunc.RPAREN 
+
+	RPAREN  shift 57
+	.  error
+
+
+state 31
+	func:  LPAREN LABEL NAT8 NAT8 subFunc.RPAREN 
+
+	RPAREN  shift 58
+	.  error
+
+
+state 32
+	func:  LPAREN LABEL NAT8 NAT6 subFunc.RPAREN 
+
+	RPAREN  shift 59
+	.  error
+
+
+state 33
 	func:  LPAREN LABEL NAT NAT subFunc RPAREN.    (4)
 
 	.  reduce 4 (src line 49)
 
 
-state 16
-	subFunc:  instruction subFunc.    (6)
+state 34
+	subFunc:  instruction subFunc.    (14)
 
-	.  reduce 6 (src line 61)
+	.  reduce 14 (src line 100)
 
 
-state 17
+state 35
 	instruction:  LPAREN innerinstruction.RPAREN 
 
-	RPAREN  shift 34
+	RPAREN  shift 60
 	.  error
 
 
-state 18
+state 36
 	innerinstruction:  w.ASSIGN s 
 	innerinstruction:  w.ASSIGN mem 
 	innerinstruction:  w.AOP t 
@@ -156,537 +328,602 @@ state 18
 	innerinstruction:  w.SOP num 
 	innerinstruction:  w.ASSIGN cmp_op 
 
-	AOP  shift 36
-	SOP  shift 37
-	ASSIGN  shift 35
+	AOP  shift 62
+	SOP  shift 63
+	ASSIGN  shift 61
 	.  error
 
 
-state 19
+state 37
 	innerinstruction:  mem.ASSIGN s 
 
-	ASSIGN  shift 38
+	ASSIGN  shift 64
 	.  error
 
 
-state 20
+state 38
 	innerinstruction:  GOTO.LABEL 
 
-	LABEL  shift 39
+	LABEL  shift 65
 	.  error
 
 
-state 21
+state 39
 	innerinstruction:  CJUMP.cmp_op LABEL LABEL 
 
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	NEG  shift 73
+	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
 	.  error
 
-	cmp_op  goto 40
-	w  goto 45
-	t  goto 41
-	x  goto 42
-	a  goto 28
-	sx  goto 32
-	num  goto 43
+	cmp_op  goto 66
+	w  goto 71
+	t  goto 67
+	x  goto 68
+	a  goto 46
+	sx  goto 50
+	num  goto 69
 
-state 22
-	innerinstruction:  syscalls.    (17)
+state 40
+	innerinstruction:  syscalls.    (25)
 
-	.  reduce 17 (src line 117)
+	.  reduce 25 (src line 156)
 
 
-state 23
+state 41
 	innerinstruction:  CALL.u NAT 
-	syscalls:  CALL.PRINT '1' 
-	syscalls:  CALL.ALLOCATE '2' 
-	syscalls:  CALL.ARRAYERROR '2' 
+	syscalls:  CALL.PRINT NAT6 
+	syscalls:  CALL.ALLOCATE NAT6 
+	syscalls:  CALL.ARRAYERROR NAT6 
 
-	LABEL  shift 30
-	ALLOCATE  shift 52
-	PRINT  shift 51
-	ARRAYERROR  shift 53
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	LABEL  shift 48
+	ALLOCATE  shift 78
+	PRINT  shift 77
+	ARRAYERROR  shift 79
+	RCX  shift 51
+	W  shift 45
+	A  shift 49
 	.  error
 
-	w  goto 54
-	u  goto 50
-	a  goto 28
-	sx  goto 32
-	label  goto 55
+	w  goto 80
+	u  goto 76
+	a  goto 46
+	sx  goto 50
+	label  goto 81
 
-state 24
+state 42
 	innerinstruction:  TAILCALL.u NAT6 
 
-	LABEL  shift 30
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	LABEL  shift 48
+	RCX  shift 51
+	W  shift 45
+	A  shift 49
 	.  error
 
-	w  goto 54
-	u  goto 56
-	a  goto 28
-	sx  goto 32
-	label  goto 55
+	w  goto 80
+	u  goto 82
+	a  goto 46
+	sx  goto 50
+	label  goto 81
 
-state 25
-	innerinstruction:  RETURN.    (20)
+state 43
+	innerinstruction:  RETURN.    (28)
 
-	.  reduce 20 (src line 129)
-
-
-state 26
-	innerinstruction:  label.    (21)
-
-	.  reduce 21 (src line 133)
+	.  reduce 28 (src line 168)
 
 
-state 27
-	w:  W.    (36)
+state 44
+	innerinstruction:  label.    (29)
 
-	.  reduce 36 (src line 182)
-
-
-state 28
-	w:  a.    (37)
-
-	.  reduce 37 (src line 183)
+	.  reduce 29 (src line 172)
 
 
-state 29
+state 45
+	w:  W.    (45)
+
+	.  reduce 45 (src line 225)
+
+
+state 46
+	w:  a.    (46)
+
+	.  reduce 46 (src line 226)
+
+
+state 47
 	mem:  LPAREN.MEM x NAT8 RPAREN 
+	mem:  LPAREN.MEM x NAT6 RPAREN 
 
-	MEM  shift 57
+	MEM  shift 83
 	.  error
 
 
-state 30
-	label:  LABEL.    (45)
+state 48
+	label:  LABEL.    (54)
 
-	.  reduce 45 (src line 199)
-
-
-state 31
-	a:  A.    (38)
-
-	.  reduce 38 (src line 186)
+	.  reduce 54 (src line 242)
 
 
-state 32
-	a:  sx.    (39)
+state 49
+	a:  A.    (47)
 
-	.  reduce 39 (src line 187)
-
-
-state 33
-	sx:  RCX.    (40)
-
-	.  reduce 40 (src line 190)
+	.  reduce 47 (src line 229)
 
 
-state 34
-	instruction:  LPAREN innerinstruction RPAREN.    (7)
+state 50
+	a:  sx.    (48)
 
-	.  reduce 7 (src line 68)
+	.  reduce 48 (src line 230)
 
 
-state 35
+state 51
+	sx:  RCX.    (49)
+
+	.  reduce 49 (src line 233)
+
+
+state 52
+	func:  LPAREN LABEL NAT NAT6 subFunc RPAREN.    (6)
+
+	.  reduce 6 (src line 59)
+
+
+state 53
+	func:  LPAREN LABEL NAT NAT8 subFunc RPAREN.    (9)
+
+	.  reduce 9 (src line 74)
+
+
+state 54
+	func:  LPAREN LABEL NAT6 NAT subFunc RPAREN.    (5)
+
+	.  reduce 5 (src line 54)
+
+
+state 55
+	func:  LPAREN LABEL NAT6 NAT6 subFunc RPAREN.    (7)
+
+	.  reduce 7 (src line 64)
+
+
+state 56
+	func:  LPAREN LABEL NAT6 NAT8 subFunc RPAREN.    (11)
+
+	.  reduce 11 (src line 84)
+
+
+state 57
+	func:  LPAREN LABEL NAT8 NAT subFunc RPAREN.    (8)
+
+	.  reduce 8 (src line 69)
+
+
+state 58
+	func:  LPAREN LABEL NAT8 NAT8 subFunc RPAREN.    (10)
+
+	.  reduce 10 (src line 79)
+
+
+state 59
+	func:  LPAREN LABEL NAT8 NAT6 subFunc RPAREN.    (12)
+
+	.  reduce 12 (src line 89)
+
+
+state 60
+	instruction:  LPAREN innerinstruction RPAREN.    (15)
+
+	.  reduce 15 (src line 107)
+
+
+state 61
 	innerinstruction:  w ASSIGN.s 
 	innerinstruction:  w ASSIGN.mem 
 	innerinstruction:  w ASSIGN.cmp_op 
 
-	LABEL  shift 30
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	LPAREN  shift 29
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	LABEL  shift 48
+	NEG  shift 73
+	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	LPAREN  shift 47
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
 	.  error
 
-	mem  goto 59
-	cmp_op  goto 60
-	s  goto 58
-	w  goto 45
-	t  goto 41
-	x  goto 61
-	a  goto 28
-	sx  goto 32
-	num  goto 62
-	label  goto 63
+	mem  goto 85
+	cmp_op  goto 86
+	s  goto 84
+	w  goto 71
+	t  goto 67
+	x  goto 87
+	a  goto 46
+	sx  goto 50
+	num  goto 88
+	label  goto 89
 
-state 36
+state 62
 	innerinstruction:  w AOP.t 
 
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
+	NEG  shift 73
+	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
 	.  error
 
-	w  goto 45
-	t  goto 64
-	x  goto 42
-	a  goto 28
-	sx  goto 32
-	num  goto 43
+	w  goto 71
+	t  goto 90
+	x  goto 68
+	a  goto 46
+	sx  goto 50
+	num  goto 69
 
-state 37
+state 63
 	innerinstruction:  w SOP.sx 
 	innerinstruction:  w SOP.num 
 
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	RCX  shift 33
-	.  error
-
-	sx  goto 65
-	num  goto 66
-
-state 38
-	innerinstruction:  mem ASSIGN.s 
-
-	LABEL  shift 30
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
-	.  error
-
-	s  goto 67
-	w  goto 45
-	x  goto 68
-	a  goto 28
-	sx  goto 32
-	num  goto 69
-	label  goto 63
-
-state 39
-	innerinstruction:  GOTO LABEL.    (15)
-
-	.  reduce 15 (src line 108)
-
-
-state 40
-	innerinstruction:  CJUMP cmp_op.LABEL LABEL 
-
-	LABEL  shift 70
-	.  error
-
-
-state 41
-	cmp_op:  t.CMP t 
-
-	CMP  shift 71
-	.  error
-
-
-state 42
-	t:  x.    (29)
-
-	.  reduce 29 (src line 170)
-
-
-state 43
-	t:  num.    (30)
-
-	.  reduce 30 (src line 171)
-
-
-state 44
-	x:  RSP.    (34)
-
-	.  reduce 34 (src line 178)
-
-
-state 45
-	x:  w.    (35)
-
-	.  reduce 35 (src line 179)
-
-
-state 46
-	num:  NAT.    (41)
-
-	.  reduce 41 (src line 193)
-
-
-state 47
-	num:  NEG.    (42)
-
-	.  reduce 42 (src line 194)
-
-
-state 48
-	num:  NAT6.    (43)
-
-	.  reduce 43 (src line 195)
-
-
-state 49
-	num:  NAT8.    (44)
-
-	.  reduce 44 (src line 196)
-
-
-state 50
-	innerinstruction:  CALL u.NAT 
-
+	NEG  shift 73
 	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	RCX  shift 51
 	.  error
 
-
-state 51
-	syscalls:  CALL PRINT.'1' 
-
-	'1'  shift 73
-	.  error
-
-
-state 52
-	syscalls:  CALL ALLOCATE.'2' 
-
-	'2'  shift 74
-	.  error
-
-
-state 53
-	syscalls:  CALL ARRAYERROR.'2' 
-
-	'2'  shift 75
-	.  error
-
-
-state 54
-	u:  w.    (27)
-
-	.  reduce 27 (src line 166)
-
-
-state 55
-	u:  label.    (28)
-
-	.  reduce 28 (src line 167)
-
-
-state 56
-	innerinstruction:  TAILCALL u.NAT6 
-
-	NAT6  shift 76
-	.  error
-
-
-state 57
-	mem:  LPAREN MEM.x NAT8 RPAREN 
-
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
-	.  error
-
-	w  goto 45
-	x  goto 77
-	a  goto 28
-	sx  goto 32
-
-state 58
-	innerinstruction:  w ASSIGN s.    (8)
-
-	.  reduce 8 (src line 74)
-
-
-state 59
-	innerinstruction:  w ASSIGN mem.    (9)
-
-	.  reduce 9 (src line 79)
-
-
-state 60
-	innerinstruction:  w ASSIGN cmp_op.    (14)
-
-	.  reduce 14 (src line 104)
-
-
-state 61
-	t:  x.    (29)
-	s:  x.    (31)
-
-	RPAREN  reduce 31 (src line 174)
-	.  reduce 29 (src line 170)
-
-
-state 62
-	t:  num.    (30)
-	s:  num.    (32)
-
-	RPAREN  reduce 32 (src line 175)
-	.  reduce 30 (src line 171)
-
-
-state 63
-	s:  label.    (33)
-
-	.  reduce 33 (src line 176)
-
+	sx  goto 91
+	num  goto 92
 
 state 64
-	innerinstruction:  w AOP t.    (11)
+	innerinstruction:  mem ASSIGN.s 
 
-	.  reduce 11 (src line 89)
+	LABEL  shift 48
+	NEG  shift 73
+	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
+	.  error
 
+	s  goto 93
+	w  goto 71
+	x  goto 94
+	a  goto 46
+	sx  goto 50
+	num  goto 95
+	label  goto 89
 
 state 65
-	innerinstruction:  w SOP sx.    (12)
+	innerinstruction:  GOTO LABEL.    (23)
 
-	.  reduce 12 (src line 94)
+	.  reduce 23 (src line 147)
 
 
 state 66
-	innerinstruction:  w SOP num.    (13)
+	innerinstruction:  CJUMP cmp_op.LABEL LABEL 
 
-	.  reduce 13 (src line 99)
+	LABEL  shift 96
+	.  error
 
 
 state 67
-	innerinstruction:  mem ASSIGN s.    (10)
+	cmp_op:  t.CMP t 
 
-	.  reduce 10 (src line 84)
+	CMP  shift 97
+	.  error
 
 
 state 68
-	s:  x.    (31)
+	t:  x.    (38)
 
-	.  reduce 31 (src line 174)
+	.  reduce 38 (src line 213)
 
 
 state 69
-	s:  num.    (32)
+	t:  num.    (39)
 
-	.  reduce 32 (src line 175)
+	.  reduce 39 (src line 214)
 
 
 state 70
-	innerinstruction:  CJUMP cmp_op LABEL.LABEL 
+	x:  X.    (43)
 
-	LABEL  shift 78
-	.  error
+	.  reduce 43 (src line 221)
 
 
 state 71
-	cmp_op:  t CMP.t 
+	x:  w.    (44)
 
-	NEG  shift 47
-	NAT  shift 46
-	NAT6  shift 48
-	NAT8  shift 49
-	RSP  shift 44
-	RCX  shift 33
-	W  shift 27
-	A  shift 31
-	.  error
+	.  reduce 44 (src line 222)
 
-	w  goto 45
-	t  goto 79
-	x  goto 42
-	a  goto 28
-	sx  goto 32
-	num  goto 43
 
 state 72
-	innerinstruction:  CALL u NAT.    (18)
+	num:  NAT.    (50)
 
-	.  reduce 18 (src line 121)
+	.  reduce 50 (src line 236)
 
 
 state 73
-	syscalls:  CALL PRINT '1'.    (22)
+	num:  NEG.    (51)
 
-	.  reduce 22 (src line 140)
+	.  reduce 51 (src line 237)
 
 
 state 74
-	syscalls:  CALL ALLOCATE '2'.    (23)
+	num:  NAT6.    (52)
 
-	.  reduce 23 (src line 144)
+	.  reduce 52 (src line 238)
 
 
 state 75
-	syscalls:  CALL ARRAYERROR '2'.    (24)
+	num:  NAT8.    (53)
 
-	.  reduce 24 (src line 148)
+	.  reduce 53 (src line 239)
 
 
 state 76
-	innerinstruction:  TAILCALL u NAT6.    (19)
+	innerinstruction:  CALL u.NAT 
 
-	.  reduce 19 (src line 125)
+	NAT  shift 98
+	.  error
 
 
 state 77
-	mem:  LPAREN MEM x.NAT8 RPAREN 
+	syscalls:  CALL PRINT.NAT6 
 
-	NAT8  shift 80
+	NAT6  shift 99
 	.  error
 
 
 state 78
-	innerinstruction:  CJUMP cmp_op LABEL LABEL.    (16)
+	syscalls:  CALL ALLOCATE.NAT6 
+
+	NAT6  shift 100
+	.  error
+
+
+state 79
+	syscalls:  CALL ARRAYERROR.NAT6 
+
+	NAT6  shift 101
+	.  error
+
+
+state 80
+	u:  w.    (36)
+
+	.  reduce 36 (src line 209)
+
+
+state 81
+	u:  label.    (37)
+
+	.  reduce 37 (src line 210)
+
+
+state 82
+	innerinstruction:  TAILCALL u.NAT6 
+
+	NAT6  shift 102
+	.  error
+
+
+state 83
+	mem:  LPAREN MEM.x NAT8 RPAREN 
+	mem:  LPAREN MEM.x NAT6 RPAREN 
+
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
+	.  error
+
+	w  goto 71
+	x  goto 103
+	a  goto 46
+	sx  goto 50
+
+state 84
+	innerinstruction:  w ASSIGN s.    (16)
 
 	.  reduce 16 (src line 113)
 
 
-state 79
-	cmp_op:  t CMP t.    (25)
+state 85
+	innerinstruction:  w ASSIGN mem.    (17)
 
-	.  reduce 25 (src line 154)
+	.  reduce 17 (src line 118)
 
 
-state 80
-	mem:  LPAREN MEM x NAT8.RPAREN 
+state 86
+	innerinstruction:  w ASSIGN cmp_op.    (22)
 
-	RPAREN  shift 81
+	.  reduce 22 (src line 143)
+
+
+state 87
+	t:  x.    (38)
+	s:  x.    (40)
+
+	RPAREN  reduce 40 (src line 217)
+	.  reduce 38 (src line 213)
+
+
+state 88
+	t:  num.    (39)
+	s:  num.    (41)
+
+	RPAREN  reduce 41 (src line 218)
+	.  reduce 39 (src line 214)
+
+
+state 89
+	s:  label.    (42)
+
+	.  reduce 42 (src line 219)
+
+
+state 90
+	innerinstruction:  w AOP t.    (19)
+
+	.  reduce 19 (src line 128)
+
+
+state 91
+	innerinstruction:  w SOP sx.    (20)
+
+	.  reduce 20 (src line 133)
+
+
+state 92
+	innerinstruction:  w SOP num.    (21)
+
+	.  reduce 21 (src line 138)
+
+
+state 93
+	innerinstruction:  mem ASSIGN s.    (18)
+
+	.  reduce 18 (src line 123)
+
+
+state 94
+	s:  x.    (40)
+
+	.  reduce 40 (src line 217)
+
+
+state 95
+	s:  num.    (41)
+
+	.  reduce 41 (src line 218)
+
+
+state 96
+	innerinstruction:  CJUMP cmp_op LABEL.LABEL 
+
+	LABEL  shift 104
 	.  error
 
 
-state 81
-	mem:  LPAREN MEM x NAT8 RPAREN.    (26)
+state 97
+	cmp_op:  t CMP.t 
+
+	NEG  shift 73
+	NAT  shift 72
+	NAT6  shift 74
+	NAT8  shift 75
+	RCX  shift 51
+	X  shift 70
+	W  shift 45
+	A  shift 49
+	.  error
+
+	w  goto 71
+	t  goto 105
+	x  goto 68
+	a  goto 46
+	sx  goto 50
+	num  goto 69
+
+state 98
+	innerinstruction:  CALL u NAT.    (26)
 
 	.  reduce 26 (src line 160)
 
 
-31 terminals, 19 nonterminals
-46 grammar rules, 82/2000 states
+state 99
+	syscalls:  CALL PRINT NAT6.    (30)
+
+	.  reduce 30 (src line 179)
+
+
+state 100
+	syscalls:  CALL ALLOCATE NAT6.    (31)
+
+	.  reduce 31 (src line 183)
+
+
+state 101
+	syscalls:  CALL ARRAYERROR NAT6.    (32)
+
+	.  reduce 32 (src line 187)
+
+
+state 102
+	innerinstruction:  TAILCALL u NAT6.    (27)
+
+	.  reduce 27 (src line 164)
+
+
+state 103
+	mem:  LPAREN MEM x.NAT8 RPAREN 
+	mem:  LPAREN MEM x.NAT6 RPAREN 
+
+	NAT6  shift 107
+	NAT8  shift 106
+	.  error
+
+
+state 104
+	innerinstruction:  CJUMP cmp_op LABEL LABEL.    (24)
+
+	.  reduce 24 (src line 152)
+
+
+state 105
+	cmp_op:  t CMP t.    (33)
+
+	.  reduce 33 (src line 193)
+
+
+state 106
+	mem:  LPAREN MEM x NAT8.RPAREN 
+
+	RPAREN  shift 108
+	.  error
+
+
+state 107
+	mem:  LPAREN MEM x NAT6.RPAREN 
+
+	RPAREN  shift 109
+	.  error
+
+
+state 108
+	mem:  LPAREN MEM x NAT8 RPAREN.    (34)
+
+	.  reduce 34 (src line 199)
+
+
+state 109
+	mem:  LPAREN MEM x NAT6 RPAREN.    (35)
+
+	.  reduce 35 (src line 203)
+
+
+29 terminals, 19 nonterminals
+55 grammar rules, 110/2000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
 68 working sets used
-memory: parser 83/30000
-18 extra closures
-101 shift entries, 3 exceptions
-39 goto entries
-29 entries saved by goto default
-Optimizer space used: output 122/30000
-122 table entries, 0 zero
-maximum spread: 31, maximum offset: 71
+memory: parser 99/30000
+20 extra closures
+129 shift entries, 3 exceptions
+47 goto entries
+37 entries saved by goto default
+Optimizer space used: output 150/30000
+150 table entries, 0 zero
+maximum spread: 29, maximum offset: 97

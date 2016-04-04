@@ -1,15 +1,16 @@
 /\(/		{ fmt.Println("LPAREN", lex.Text()) }
 /\)/		{ fmt.Println("RPAREN", lex.Text()) }
-/;[a-zA-Z0-9_]*$/ {   /* ignore comments */ }
+/;[^\r\n]*[\r\n]/ {   fmt.Println("COMMENT", lex.Text())/* ignore comments */ }
 /[ \t]+/	{ /*ignore whitespace */ }
 
-/:go/		{ fmt.Println("GO", lex.Text()) }
+
 /return/	{ fmt.Println("RETURN", lex.Text()) }
 /print/	{ fmt.Println("PRINT", lex.Text()) }
 /allocate/	{ fmt.Println("ALLOCATE", lex.Text()) }
 /array-error/	{ fmt.Println("ARRAYERROR", lex.Text()) }
 /cjump/	{ fmt.Println("CJUMP", lex.Text()) }
 /goto/	{ fmt.Println("GOTO", lex.Text()) }
+/mem/   { fmt.Println("MEM", lex.Text()) }
 /<-/	{ fmt.Println("ASSIGN", lex.Text()) }
 /call/ { fmt.Println("CALL", lex.Text()) }
 /tail-call/	{ fmt.Println("TAILCALL", lex.Text()) }
@@ -25,13 +26,13 @@
 /(<=?)|=/		{ fmt.Println("CMP", lex.Text()) }
 /(<<=)|(>>=)/	{ fmt.Println("SOP", lex.Text()) }
 /(\+=)|(-=)|(\*=)|(&=)/	{ fmt.Println("AOP", lex.Text()) }
-/^:[A-ZA-Z_][A-ZA-Z_0-9]*$/		{ fmt.Println("LABEL", lex.Text()) }
+/:[a-zA-Z_][a-zA-Z_0-9]*/		{ fmt.Println("LABEL", lex.Text()) }
 /./	{ fmt.Printf("Found invalid input on line: %d\n", lex.Line()) }
 
 //
 
 
-package main
+package l1compiler
 import ("fmt";"os";)
 
 
