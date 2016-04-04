@@ -1,23 +1,22 @@
 %{
 package L1
 
-/*import (
-		"io"
-		"unicode/utf8"
-		"fmt"
+import (
+		//"fmt"
 		"strconv"
-)*/
+)
 
 %}
 
 %union {
+	n int
 	s string
 	node Node
 }
 
 
 %token <s> LABEL GOLABEL
-%token <s> NEG NAT NAT6 NAT8
+%token <n> NEG NAT NAT6 NAT8
 %token <s> AOP SOP CMP
 %token CALL CJUMP TAILCALL RETURN GOTO
 %token LPAREN RPAREN
@@ -30,38 +29,38 @@ package L1
 
 program: LPAREN LABEL subProgram RPAREN
 {
-	fmt.Printf("Detected program: %q\n", $2)
+	//fmt.Printf("Detected program: %q\n", $2)
 	$$ = newProgramNode($2, $3)
 	cast(yylex).SetAstRoot($$)
 }
 
 subProgram: func
 {
-	fmt.Printf("Detected end subprogram\n")
+	//fmt.Printf("Detected end subprogram\n")
 	$$ = newSubProgramNode($1, nil)
 }
 | func subProgram
 {
-	fmt.Printf("Detected subprogram\n")
+	//fmt.Printf("Detected subprogram\n")
 	$$ = newSubProgramNode($1, $2)
 }
 
 
 func: LPAREN LABEL NAT NAT subFunc RPAREN
 {
-	fmt.Printf("Detected func: %q\n", $2)
+	//fmt.Printf("Detected func: %q\n", $2)
 	$$ = newFunctionNode($2, $3, $4, $5)
 }
 
 
 subFunc: instruction
 {
-	fmt.Printf("Detected end instruction\n")
+	//fmt.Printf("Detected end instruction\n")
 	$$ = newInstructionNode($1, nil)
 }
 |  instruction subFunc
 {
-	fmt.Printf("Detected instruction\n")
+	//fmt.Printf("Detected instruction\n")
 	$$ = newInstructionNode($1, $2)
 }
 
@@ -74,32 +73,32 @@ instruction: LPAREN innerinstruction RPAREN
 
 innerinstruction: w ASSIGN s
 {
-	fmt.Printf("Detected assign \n")
+	//fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $3)
 }
 |	w ASSIGN mem
 {
-	fmt.Printf("Detected assign \n")
+	//fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $3)
 }
 | mem ASSIGN s
 {
-	fmt.Printf("Detected assign \n")
+	//fmt.Printf("Detected assign \n")
 	$$ = newAssignNode($1, $3)
 }
 | w AOP t
 {
-	fmt.Printf("Detected aop \n")
+	//fmt.Printf("Detected aop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP sx
 {
-	fmt.Printf("Detected sop \n")
+	//fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP num
 {
-	fmt.Printf("Detected sop \n")
+	//fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 |  w ASSIGN cmp_op
@@ -108,7 +107,7 @@ innerinstruction: w ASSIGN s
 }
 |  GOTO LABEL
 {
-	fmt.Printf("Detected goto: %q\n", $2)
+	//fmt.Printf("Detected goto: %q\n", $2)
 	$$ = newGotoNode($2)
 }
 | CJUMP cmp_op LABEL LABEL

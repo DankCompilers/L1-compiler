@@ -5,6 +5,7 @@ var count int
 
 type Node interface {
 	NodeId() int
+	SetNodeId(int)
 	AppendChild(Node)
 	Next() Node
 	Front() Node
@@ -20,8 +21,13 @@ type ParseTreeNode struct {
 func newParseTreeNode(id int) ParseTreeNode {
 	return ParseTreeNode {
 		nodeId: id,
-		children : new([]Node, 0),
+		children : make([]Node, 0),
 	}
+}
+
+
+func (p *ParseTreeNode) SetNodeId(id int) {
+	p.nodeId = id
 }
 
 
@@ -32,7 +38,7 @@ func (p *ParseTreeNode) NodeId() int {
 }
 
 ///
-func (p *ParseTreeNode) Front() ParseTreeNode {
+func (p *ParseTreeNode) Front() Node {
 	p.currChild = 0
 
 	if len(p.children) <= 0 {
@@ -48,7 +54,7 @@ func (p *ParseTreeNode) AppendChild(n Node) {
 }
 
 ///
-func (p *ParseTreeNode) Next() {
+func (p *ParseTreeNode) Next() Node{
 	p.currChild += 1
 
 	if p.currChild >= len(p.children) {
@@ -63,7 +69,7 @@ func (p *ParseTreeNode) Next() {
 
 type ProgramNode struct {
 	ParseTreeNode
-	EntryLabel string
+	Label string
 }
 
 type SubProgramNode struct {
@@ -97,8 +103,8 @@ type CmpopNode struct {
 
 type MemNode struct {
 	ParseTreeNode
-	X 						string
-	N8 						uint8
+	// X 						string
+	N8 						uint
 }
 
 type LabelNode struct {
@@ -109,6 +115,12 @@ type LabelNode struct {
 type GotoNode struct {
 	ParseTreeNode
 	Label 				string
+}
+
+type CjumpNode struct {
+	ParseTreeNode
+	TrueLabel 				string
+	FalseLabel				string
 }
 
 type SysCallNode struct {
@@ -140,169 +152,200 @@ type TokenNode struct {
 /*********************** HELPER DEFINITIONS /********************************/
 
 
-func newProgramNode(func_label string, rest Node) ProgramNode {
+func newProgramNode(func_label string, rest Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(rest)
+
 	p := &ProgramNode{
-		nodeId	: count,
+		ParseTreeNode : b,
 		Label		: func_label,
 	}
-	p.AppendChild(rest)
-	count++
 
+	count++
 	return p
 }
 
 
-func newSubProgramNode(funcNode, rest Node) SubProgramNode {
-	p := &SubProgramNode{ nodeId: count }
-	p.AppendChild(funcNode)
-	p.AppendChild(rest)
-	count++
+func newSubProgramNode(funcNode, rest Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(funcNode)
 
+	if rest != nil {
+			b.AppendChild(rest)
+	}
+
+	p := &SubProgramNode{
+		ParseTreeNode : b,
+	}
+
+	count++
 	return p
 }
 
 
-func newFunctionNode(label string, arity int, locals int, rest Node) FunctionNode {
+func newFunctionNode(label string, arity int, locals int, rest Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(rest)
+
 	p := &FunctionNode{
-		nodeId: count,
+		ParseTreeNode : b,
 		Label: label,
 		Arity: uint(arity),
 		NumLocals: uint(locals),
 	}
 
-	p.AppendChild(rest)
 	count++
-
 	return p
 }
 
 
-func newInstructionNode(instNode Node, rest InstructionNode) InstructionNode {
-	p := &InstructionNode{ nodeId: count }
-	p.AppendChild(instNode)
-	p.AppendChild(rest)
-	count++
+func newInstructionNode(instNode, rest Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(instNode)
 
+	if rest != nil {
+		b.AppendChild(rest)
+	}
+
+	p := &InstructionNode{
+		ParseTreeNode: b,
+	}
+
+	count++
 	return p
 }
 
 
-func newAssignNode(l, r Node) AssignNode {
-	p := &AssignNode{ nodeId: count }
-	p.AppendChild(l)
-	p.AppendChild(r)
-	count++
+func newAssignNode(l, r Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(l)
+	b.AppendChild(r)
 
+	p := &AssignNode{
+		ParseTreeNode: b,
+	}
+
+	count++
 	return p
 }
 
 
-func newOpNode(op string, l, r Node) OpNode {
+func newOpNode(op string, l, r Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(l)
+	b.AppendChild(r)
+
 	p := &OpNode{
-		nodeId: count,
+		ParseTreeNode: b,
 		Operator: op,
 	}
 
-	p.AppendChild(l)
-	p.AppendChild(r)
 	count++
-
 	return p
 }
 
 
-func newCmpopNode(op string, l, r Node) CmpopNode {
+func newCmpopNode(op string, l, r Node) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(l)
+	b.AppendChild(r)
+
 	p := &CmpopNode{
-		nodeId: count,
+		ParseTreeNode: b,
 		Operator: op,
 	}
 
-	p.AppendChild(l)
-	p.AppendChild(r)
 	count++
-
 	return p
 }
 
-func newCjumpNode(cmpop Node, trueLabel, falseLabel string) CjumpNode{
-	p := CjumpNode{
-		nodeId : count,
+func newCjumpNode(cmpop Node, trueLabel, falseLabel string) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(cmpop)
+
+	p := &CjumpNode{
+		ParseTreeNode: b,
 		TrueLabel 	: trueLabel,
 		FalseLabel 	: falseLabel,
 	}
-	count++
-	p.AppendChild(cmpop)
 
+	count++
 	return p
 }
 
 
-func newMemNode(x TokenNode, offset int) MemNode {
+func newMemNode(x Node, offset int) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(x)
+
 	p := &MemNode{
-		nodeId: count,
-		X: x.Value,
+		ParseTreeNode: b,
 		N8: uint(offset),
 	}
 
 	count++
-
 	return p
 }
 
 
-func newLabelNode(label string) LabelNode {
+func newLabelNode(label string) Node {
+	b := newParseTreeNode(count)
+
 	p := &LabelNode{
-		nodeId	: count,
+		ParseTreeNode: b,
 		Label		: label,
 	}
-	count++
 
+	count++
 	return p
 }
 
 
-func newGotoNode(label string) GotoNode {
+func newGotoNode(label string) Node {
+	b := newParseTreeNode(count)
+
 	p := &GotoNode{
-		nodeId: count,
+		ParseTreeNode: b,
 		Label: label,
 	}
-	count++
 
+	count++
 	return p
 }
 
 
-func newSysCallNode(label string, arity int) SysCallNode {
+func newSysCallNode(label string, arity int) Node {
+	b := newParseTreeNode(count)
+
 	p := &SysCallNode{
-		nodeId: count,
+		ParseTreeNode: b,
 		Label: label,
 		Arity: uint(arity),
 	}
-	count++
 
+	count++
 	return p
 }
 
 
 func newCallNode(dest Node, arity int) Node {
+	b := newParseTreeNode(count)
+	b.AppendChild(dest)
+
 	p := &CallNode{
-		nodeId: count,
 		Arity: uint(arity),
 	}
 
-	p.AppendChild(dest)
 	count++
-
 	return p
 }
 
 
-func newTailcallNode(dest Node, arity int) TailcallNode {
+func newTailcallNode(dest Node, arity int) Node {
 	p := &SysCallNode{
-		nodeId: count,
 		Arity: uint(arity),
 	}
-
+	p.SetNodeId(count)
 	p.AppendChild(dest)
 	count++
 
@@ -311,18 +354,24 @@ func newTailcallNode(dest Node, arity int) TailcallNode {
 
 
 func newReturnNode() Node {
-	p := &SysCallNode{ nodeId: count }
-	count++
+	b := newParseTreeNode(count)
 
+	p := &SysCallNode{
+		ParseTreeNode: b,
+	}
+
+	count++
 	return p
 }
 
 func newTokenNode(token string) Node {
-	p := &LabelNode{
-		nodeId	: count,
-		Value		: token,
-	}
-	count++
+	b := newParseTreeNode(count)
 
+	p := &LabelNode{
+		ParseTreeNode: b,
+		Label		: token,
+	}
+
+	count++
 	return p
 }
