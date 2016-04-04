@@ -1,4 +1,4 @@
-package L1
+package l1compiler
 
 import (
 	"bufio"
@@ -82,6 +82,25 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		//		mem, value := n.children[:]
 		//		c.writer.WriteString("movq $%d, %s \n", value, mem)
 
+	case *SubProgramNode, *InstructionNode:
+		for index, element := range n.children {
+			c.compNode(element)
+		}
+
+	case *FunctionNode:
+		label := n.Label
+		locals := n.NumLocals
+		label = labelToASM(label)
+		label = label + "\n"
+		c.writer.WriteString(label)
+		if locals > 0 {
+			toWrite := fmt.Sprintf("subq $%d, %rsp", (8 * locals))
+			c.writer.Writer(toWrite)
+		}
+		for index, element := range n.children {
+			c.compNode(element)
+		}
+
 	case *OpNode:
 		mem, value := n.children[:]
 
@@ -120,7 +139,7 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 			toWrite = fmt.Sprintf("subq $%d %s", spills, "%rsp")
 			c.writer.WriteString(toWrite)
 		}
-		toWrite = fmt.SprintF("jmp %s", compNode(n.children[0]))
+		toWrite = fmt.SprintF("jmp %s", c.compNode(n.children[0]))
 		c.writer.WriteString(toWrite)
 
 	case *AssignNode:
@@ -149,13 +168,13 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 
 					inputToStore = "$" + tokenVal
 				} else {
-					inputToStore := compNode(lChild)
+					inputToStore := c.compNode(lChild)
 				}
 
 				toWrite := fmt.Sprintf("movq %s, %s \n", inputToStore, destination)
 				c.writer.WriteString(toWrite)
 			} else if lChild.(type) == *CmpopNode {
-				onleft, val := compNode(lChild)
+				onleft, val := c.compNode(lChild)
 				if onleft == 0 {
 					rChild := n.children[0].token
 					toWrite := fmt.Sprintf("movq $%s, %%s", rChild)
@@ -245,7 +264,7 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 	case *CjumpNode:
 		yesLabel := n.children[1].label
 		noLabel := n.children[2].label
-		onleft, val, op = compNode(n.children[0])
+		onleft, val, op = c.compNode(n.children[0])
 		switch op {
 		case "<=":
 			jmpStment = "jle"
@@ -264,9 +283,6 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 	}
 }
 
-//func (c *AsmCodeGenerator) WriteToFile(line string){
-//}
-
 func (c *AsmCodeGenerator) beginCompiler(ast Node) error {
 	file, err := os.Create("L1generatedASM.txt")
 	defer file.Close()
@@ -275,7 +291,7 @@ func (c *AsmCodeGenerator) beginCompiler(ast Node) error {
 	}
 
 	c.writer = bufio.NewWriter(file)
-	c.walkandTalk(ast)
+	c.compNode(ast)
 	c.writer.Flush()
 	return nil
 }
