@@ -16,7 +16,7 @@ import (
 
 
 %token <s> LABEL GOLABEL
-%token <n> NEG NAT NAT6 N8 NEGN8
+%token <n> NEG NAT NAT6 NAT8
 %token <s> AOP SOP CMP
 %token CALL CJUMP TAILCALL RETURN GOTO
 %token LPAREN RPAREN
@@ -25,7 +25,6 @@ import (
 %token <s> RSP RCX
 %token <s> X W A
 %type <node> program subProgram func subFunc instruction innerinstruction mem cmp_op syscalls s w u t x a sx num label
-%type <n> nat n8
 %%
 
 program: LPAREN LABEL subProgram RPAREN
@@ -47,12 +46,51 @@ subProgram: func
 }
 
 
-func: LPAREN LABEL nat nat subFunc RPAREN
+func: LPAREN LABEL NAT NAT subFunc RPAREN
 {
 	fmt.Println("Detected func: %+v", $2)
 	$$ = newFunctionNode($2, $3, $4, $5)
 }
-
+| LPAREN LABEL NAT6 NAT subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT NAT6 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT6 NAT6 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT6 NAT8 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
+| LPAREN LABEL NAT8 NAT6 subFunc RPAREN
+{
+	//fmt.Printf("Detected func: %q\n", $2)
+	$$ = newFunctionNode($2, $3, $4, $5)
+}
 
 subFunc: instruction
 {
@@ -69,10 +107,6 @@ subFunc: instruction
 instruction: LPAREN innerinstruction RPAREN
 {
 	$$ = $2
-}
-|  label
-{
-	$$ = $1
 }
 
 
@@ -123,7 +157,7 @@ innerinstruction: w ASSIGN s
 {
 	$$ = $1
 }
-| CALL u nat
+| CALL u NAT
 {
 	$$ = newCallNode($2, $3)
 }
@@ -135,7 +169,10 @@ innerinstruction: w ASSIGN s
 {
 	$$ = newReturnNode()
 }
-
+|  label
+{
+	$$ = $1
+}
 
 
 
@@ -159,12 +196,14 @@ cmp_op: t CMP t
 }
 
 
-mem: LPAREN MEM x n8 RPAREN
+mem: LPAREN MEM x NAT8 RPAREN
 {
 	$$ = newMemNode($3, $4)
 }
-
-
+| LPAREN MEM x NAT6 RPAREN
+{
+	$$ = newMemNode($3, $4)
+}
 
 
 u: 	w 		{ $$ = $1 }
@@ -193,18 +232,11 @@ a: A { $$ = newTokenNode($1) }
 
 sx: RCX { $$ = newTokenNode($1) }
 
+
 num: 	NAT { $$ = newTokenNode(strconv.Itoa($1)) }
-|	NEG 		{ $$ = newTokenNode(strconv.Itoa($1)) }
-| n8			{ $$ = newTokenNode(strconv.Itoa($1)) }
-
-
-nat: NAT 	{ $$ = $1 }
-| NAT6 		{ $$ = $1 }
-|	N8 			{ $$ = $1 }
-
-n8: N8 	{ $$ = $1 }
-| NEGN8 { $$ = $1 }
-| NAT6	{ $$ = $1 }
+	|	NEG 	{ $$ = newTokenNode(strconv.Itoa($1)) }
+	| NAT6 	{ fmt.Println("Yacc got NAT6"); $$ = newTokenNode(strconv.Itoa($1)) }
+	| NAT8 	{ $$ = newTokenNode(strconv.Itoa($1)) }
 
 
 label: LABEL

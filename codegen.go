@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -37,7 +38,7 @@ func labelToASM(label string) string {
 	return newLabel
 }
 
-type codeGenerator interface {
+type CodeGenerator interface {
 	beginCompiler(Node) error
 }
 
@@ -57,9 +58,6 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 
 	switch n := node.(type) {
 
-	default:
-		return
-
 	case *ProgramNode:
 		c.writer.WriteString(".text \n")
 		c.writer.WriteString(".globl go \n")
@@ -69,7 +67,7 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 			c.writer.WriteString(toWrite)
 		}
 
-		c.compNode(n.children[0])
+		c.compNode(n.Front())
 
 		for i := len(calleeArray) - 1; i >= 0; i-- {
 			regToWrite := calleeArray[i]
@@ -81,10 +79,13 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		//	case *AssignNode:
 		//		mem, value := n.children[:]
 		//		c.writer.WriteString("movq $%d, %s \n", value, mem)
-
+	case nil:
+		//return
 	case *SubProgramNode, *InstructionNode:
-		for index, element := range n.children {
-			c.compNode(element)
+		dummyNode := n.Front()
+		c.compNode(dummyNode)
+		for {
+			c.compNode(n.Next())
 		}
 
 	case *FunctionNode:
@@ -95,88 +96,95 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		c.writer.WriteString(label)
 		if locals > 0 {
 			toWrite := fmt.Sprintf("subq $%d, %rsp", (8 * locals))
-			c.writer.Writer(toWrite)
+			c.writer.WriteString(toWrite)
 		}
-		for index, element := range n.children {
-			c.compNode(element)
+		dummyNode := n.Front()
+		c.compNode(dummyNode)
+		for {
+			c.compNode(n.Next())
 		}
 
 	case *OpNode:
-		mem, value := n.children[:]
+		mem := n.Front().returnLabel()
+		value := n.Next().returnLabel()
+
+		var instruct string
 
 		if op := n.Operator; op == ">>=" {
-			instruct := "sarq"
+			instruct = "sarq"
 		} else {
-			instruct := "salq"
+			instruct = "salq"
 		}
 
 		if numRep, err := strconv.Atoi(value); err == nil {
-			value = '$' + numRep
+			value = "$" + strconv.Itoa(numRep)
 		}
 
-		lowerReg = eightBitEquiv[mem]
+		lowerReg := eightBitEquiv[mem]
 		toWrite := fmt.Sprintf("%s %s, %s", instruct, value, lowerReg)
 		c.writer.WriteString(toWrite)
 
-	case *CallNode:
+		//	case *CallNode:
 
-		u, NAT = n.children[:]
-		u := u.value
-		NAT := NAT
+		//		u, NAT = n.children[:]
+		//		u := u.value
+		//		NAT := NAT
 
 	case *LabelNode:
-		newString := labelToASM(n.label)
-		return newString
+		newString := labelToASM(n.Label)
+		//return newString
 		//c.writer.WriteString(newString + "\n")
 
 	case *GotoNode, *SysCallNode:
-		newString := labelToASM(n.label)
-		c.writer.WriteString("jmp %s", newString)
+		newString := labelToASM(n.returnLabel())
+		newString = "jmp " + newString
+		c.writer.WriteString(newString)
 
 	case *CallNode:
 		if arity := n.Arity; arity > 6 {
 			spills := 8 * (arity - 6)
-			toWrite = fmt.Sprintf("subq $%d %s", spills, "%rsp")
+			toWrite := fmt.Sprintf("subq $%d %s", spills, "%rsp")
 			c.writer.WriteString(toWrite)
 		}
-		toWrite = fmt.SprintF("jmp %s", c.compNode(n.children[0]))
+		returnedString := c.compNode(n.Front())
+		toWrite := fmt.Sprintf("jmp %s", returnedString)
 		c.writer.WriteString(toWrite)
 
 	case *AssignNode:
-		if child := n.children[0]; child.(type) == *MemNode {
+		if child := n.Front(); reflect.TypeOf(child) == MemNode {
 			reg := child.X
 			offset := child.N8
-			leftChildValue := n.children[1].token
-
-			if i, err := strconv.Atoi(leftChildValue); !err {
-				toInput := "$" + i
-			} else {
-				toInput := "%" + leftChildValue
+			throwAway := n.Front()
+			leftChildValue := n.Next().returnLabel()
+			toInput := "%" + leftChildValue
+			if i, err := strconv.Atoi(leftChildValue); err == nil {
+				toInput = "$" + strconv.Itoa(i)
 			}
+
 			toWrite := fmt.Sprintf("movq %s, %d(%s) \n", toInput, offset, reg)
-			c.writer.Writer(toWrite)
+			c.writer.WriteString(toWrite)
 		} else {
 
-			destination = n.children[0].token
-			if lChild := n.children[1]; lChild.(type) != *MemNode {
-				tokenVal := lChild.token
+			destination := n.Front().returnLabel()
+			if lChild := n.Next(); lChild.(type) != *MemNode {
+
+				inputToStore := c.compNode(lChild)
+				tokenVal := lChild.returnLabel()
 				if _, ok := eightBitEquiv[tokenVal]; ok {
 					//  c.writer.Writer("movq %%s, %%s", tokenVal, destination)
 					inputToStore = "%" + tokenVal
 
-				} else if i, err := strconv.Atoi(tokenVal); !err {
+				} else if i, err := strconv.Atoi(tokenVal); err == nil {
 
 					inputToStore = "$" + tokenVal
-				} else {
-					inputToStore := c.compNode(lChild)
 				}
 
 				toWrite := fmt.Sprintf("movq %s, %s \n", inputToStore, destination)
 				c.writer.WriteString(toWrite)
 			} else if lChild.(type) == *CmpopNode {
 				onleft, val := c.compNode(lChild)
+				rChild := n.Front().returnLabel()
 				if onleft == 0 {
-					rChild := n.children[0].token
 					toWrite := fmt.Sprintf("movq $%s, %%s", rChild)
 					c.writer.WriteString(toWrite)
 				} else {
@@ -188,8 +196,10 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 				}
 
 			} else {
-				memX := n.children[1].X
-				memOffset := n.children.N8
+				reset := n.Front()
+				memoryNode := n.Next()
+				memX := memoryNode.X
+				memOffset := memoryNode.N8
 
 				toWrite := fmt.Sprintf("movq %d(%%s), %s \n", memOffset, memX, destination)
 				c.writer.WriteString(toWrite)
@@ -197,10 +207,10 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 
 		}
 
-	case CmpopNode:
+	case *CmpopNode:
 		op := Operator
-		leftSide := n.children[0].token
-		rightSide = n.children[1].token
+		leftSide := n.Front().token
+		rightSide = n.Next().token
 
 		switch op {
 		default:
@@ -262,9 +272,9 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		}
 
 	case *CjumpNode:
-		yesLabel := n.children[1].label
-		noLabel := n.children[2].label
-		onleft, val, op = c.compNode(n.children[0])
+		onleft, val, op = c.compNode(n.Front)
+		yesLabel := n.Next().label
+		noLabel := n.Next().label
 		switch op {
 		case "<=":
 			jmpStment = "jle"
@@ -281,9 +291,10 @@ func (c *AsmCodeGenerator) compNode(node Node) {
 		c.writer.WriteString(toWrite)
 
 	}
+	return
 }
 
-func (c *AsmCodeGenerator) beginCompiler(ast Node) error {
+func (c *AsmCodeGenerator) BeginCompiler(ast Node) error {
 	file, err := os.Create("L1generatedASM.txt")
 	defer file.Close()
 	if err != nil {
