@@ -12,7 +12,7 @@ all:
 			sed -i '/NEX_END_OF_LEXER_STRUCT/ip *Compiler' lexer.nn.go
    endif
 
-	  go tool yacc -o=l1_yacc_compatible.yacc.go parser.y
+	  go tool yacc -o=parser.yacc.go parser.y
 
 test:
 	go test
