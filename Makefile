@@ -1,7 +1,7 @@
 UNAME := $(shell uname -s)
 
 all:
-	  ${GOPATH}/bin/nex -e=true lexer.nex
+	  ${GOPATH}/bin/nex lexer.nex
 
    # Could use nex instead of ed, but that'd be a little gratuitous.
    ifeq ($(UNAME), Darwin)
