@@ -1,0 +1,42 @@
+/\(/		{ fmt.Println("LPAREN", lex.Text()) }
+/\)/		{ fmt.Println("RPAREN", lex.Text()) }
+/;[^\r\n]*[\r\n]/ {   fmt.Println("COMMENT", lex.Text())/* ignore comments */ }
+/[ \t]+/	{ /*ignore whitespace */ }
+
+
+/return/	{ fmt.Println("RETURN", lex.Text()) }
+/print/	{ fmt.Println("PRINT", lex.Text()) }
+/allocate/	{ fmt.Println("ALLOCATE", lex.Text()) }
+/array-error/	{ fmt.Println("ARRAYERROR", lex.Text()) }
+/cjump/	{ fmt.Println("CJUMP", lex.Text()) }
+/goto/	{ fmt.Println("GOTO", lex.Text()) }
+/mem/   { fmt.Println("MEM", lex.Text()) }
+/<-/	{ fmt.Println("ASSIGN", lex.Text()) }
+/call/ { fmt.Println("CALL", lex.Text()) }
+/tail-call/	{ fmt.Println("TAILCALL", lex.Text()) }
+
+/\n/	{ }
+
+/0|([1-9][0-9]*)/	{ fmt.Println("NAT", lex.Text()) }
+/-[1-9][0-9]*/   { fmt.Println("NUM", lex.Text()) }
+/rcx/	{ fmt.Println("RCX", lex.Text()) }
+/(rdi)|(rsi)|(rdx)|(r8)|(r9)/		{ fmt.Println("A", lex.Text()) }
+/(rax)|(rbx)|(rbp)|(r10)|(r11)|(r12)|(r13)|(r14)|(r15)/	{ fmt.Println("W", lex.Text()) }
+/rsp/		{ fmt.Println("X", lex.Text()) }
+/(<=?)|=/		{ fmt.Println("CMP", lex.Text()) }
+/(<<=)|(>>=)/	{ fmt.Println("SOP", lex.Text()) }
+/(\+=)|(-=)|(\*=)|(&=)/	{ fmt.Println("AOP", lex.Text()) }
+/:[a-zA-Z_][a-zA-Z_0-9]*/		{ fmt.Println("LABEL", lex.Text()) }
+/./	{ fmt.Printf("Found invalid input on line: %d\n", lex.Line()) }
+
+//
+
+
+package l1compiler
+import ("fmt";"os";)
+
+
+func main() {
+  lex := NewLexer(os.Stdin)
+  NN_FUN(lex)
+}
