@@ -34,7 +34,7 @@ type Lexer struct {
 
 	// The following line makes it easy for scripts to insert fields in the
 	// generated code.
-	p *Compiler
+p *Compiler
 	// [NEX_END_OF_LEXER_STRUCT]
 }
 
@@ -2525,20 +2525,24 @@ OUTER0:
 		case 15:
 			{
 				fmt.Println("NUM", yylex.Text())
-				lval.s = yylex.Text()
-				//lval.n,_ = strconv.Atoi(yylex.Text())
+				//lval.s = yylex.Text()
+				lval.n, _ = strconv.Atoi(yylex.Text())
 				lvaln, _ := strconv.Atoi(yylex.Text())
 
 				if lvaln >= 0 {
 					if lvaln <= 6 {
 						fmt.Println("NAT6")
 						return NAT6
-					} else if lvaln <= 255 {
-						return NAT8
+					} else if lvaln <= 127 {
+						return N8
 					} else {
 						return NAT
 					}
 				} else {
+					if lvaln >= -128 {
+						return NEGN8
+					}
+
 					return NEG
 				}
 			}

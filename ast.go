@@ -2,33 +2,34 @@ package l1compiler
 
 var count int
 
+
 type Node interface {
 	NodeId() int
 	SetNodeId(int)
 	AppendChild(Node)
 	Next() Node
 	Front() Node
-	returnLabel() string
 }
 
 type ParseTreeNode struct {
-	nodeId    int
+	nodeId   	int
 	currChild int
-	children  []Node
-	Label     string
+	children 	[]Node
 }
 
 /// Helper function to make new Nodes
 func newParseTreeNode(id int) ParseTreeNode {
-	return ParseTreeNode{
-		nodeId:   id,
-		children: make([]Node, 0),
+	return ParseTreeNode {
+		nodeId: id,
+		children : make([]Node, 0),
 	}
 }
+
 
 func (p *ParseTreeNode) SetNodeId(id int) {
 	p.nodeId = id
 }
+
 
 // Implementing Node interface
 
@@ -52,12 +53,8 @@ func (p *ParseTreeNode) AppendChild(n Node) {
 	p.children = append(p.children, n)
 }
 
-func (p *ParseTreeNode) returnLabel() string {
-	return p.Label
-}
-
 ///
-func (p *ParseTreeNode) Next() Node {
+func (p *ParseTreeNode) Next() Node{
 	p.currChild += 1
 
 	if p.currChild >= len(p.children) {
@@ -66,6 +63,7 @@ func (p *ParseTreeNode) Next() Node {
 
 	return p.children[p.currChild]
 }
+
 
 /*********************** TYPE DEFINITIONS /********************************/
 
@@ -80,9 +78,9 @@ type SubProgramNode struct {
 
 type FunctionNode struct {
 	ParseTreeNode
-	Label     string
-	Arity     uint
-	NumLocals uint
+	Label 				string
+	Arity 				uint
+	NumLocals 		uint
 }
 
 type InstructionNode struct {
@@ -95,46 +93,47 @@ type AssignNode struct {
 
 type OpNode struct {
 	ParseTreeNode
-	Operator string
+	Operator 			string
 }
 
 type CmpopNode struct {
 	ParseTreeNode
-	Operator string
+	Operator 			string
 }
 
 type MemNode struct {
 	ParseTreeNode
-	X  string
-	N8 uint
+	// X 						string
+	N8 						uint
 }
 
 type LabelNode struct {
 	ParseTreeNode
-	Label string
+	Label 				string
 }
 
 type GotoNode struct {
 	ParseTreeNode
-	Label string
+	Label 				string
 }
 
 type CjumpNode struct {
 	ParseTreeNode
-	TrueLabel  string
-	FalseLabel string
+	TrueLabel 				string
+	FalseLabel				string
 }
 
 type SysCallNode struct {
 	ParseTreeNode
-	Label string
-	Arity uint
+	Label 				string
+	Arity					uint
 }
 
 type CallNode struct {
 	ParseTreeNode
-	Arity uint
+	Arity 				uint
 }
+
 
 type TailcallNode struct {
 	ParseTreeNode
@@ -149,51 +148,56 @@ type TokenNode struct {
 	Value string
 }
 
+
 /*********************** HELPER DEFINITIONS /********************************/
+
 
 func newProgramNode(func_label string, rest Node) Node {
 	b := newParseTreeNode(count)
 	b.AppendChild(rest)
 
 	p := &ProgramNode{
-		ParseTreeNode: b,
-		Label:         func_label,
+		ParseTreeNode : b,
+		Label		: func_label,
 	}
 
 	count++
 	return p
 }
+
 
 func newSubProgramNode(funcNode, rest Node) Node {
 	b := newParseTreeNode(count)
 	b.AppendChild(funcNode)
 
 	if rest != nil {
-		b.AppendChild(rest)
+			b.AppendChild(rest)
 	}
 
 	p := &SubProgramNode{
-		ParseTreeNode: b,
+		ParseTreeNode : b,
 	}
 
 	count++
 	return p
 }
+
 
 func newFunctionNode(label string, arity int, locals int, rest Node) Node {
 	b := newParseTreeNode(count)
 	b.AppendChild(rest)
 
 	p := &FunctionNode{
-		ParseTreeNode: b,
-		Label:         label,
-		Arity:         uint(arity),
-		NumLocals:     uint(locals),
+		ParseTreeNode : b,
+		Label: label,
+		Arity: uint(arity),
+		NumLocals: uint(locals),
 	}
 
 	count++
 	return p
 }
+
 
 func newInstructionNode(instNode, rest Node) Node {
 	b := newParseTreeNode(count)
@@ -211,6 +215,7 @@ func newInstructionNode(instNode, rest Node) Node {
 	return p
 }
 
+
 func newAssignNode(l, r Node) Node {
 	b := newParseTreeNode(count)
 	b.AppendChild(l)
@@ -224,6 +229,7 @@ func newAssignNode(l, r Node) Node {
 	return p
 }
 
+
 func newOpNode(op string, l, r Node) Node {
 	b := newParseTreeNode(count)
 	b.AppendChild(l)
@@ -231,12 +237,13 @@ func newOpNode(op string, l, r Node) Node {
 
 	p := &OpNode{
 		ParseTreeNode: b,
-		Operator:      op,
+		Operator: op,
 	}
 
 	count++
 	return p
 }
+
 
 func newCmpopNode(op string, l, r Node) Node {
 	b := newParseTreeNode(count)
@@ -245,7 +252,7 @@ func newCmpopNode(op string, l, r Node) Node {
 
 	p := &CmpopNode{
 		ParseTreeNode: b,
-		Operator:      op,
+		Operator: op,
 	}
 
 	count++
@@ -258,13 +265,14 @@ func newCjumpNode(cmpop Node, trueLabel, falseLabel string) Node {
 
 	p := &CjumpNode{
 		ParseTreeNode: b,
-		TrueLabel:     trueLabel,
-		FalseLabel:    falseLabel,
+		TrueLabel 	: trueLabel,
+		FalseLabel 	: falseLabel,
 	}
 
 	count++
 	return p
 }
+
 
 func newMemNode(x Node, offset int) Node {
 	b := newParseTreeNode(count)
@@ -272,49 +280,53 @@ func newMemNode(x Node, offset int) Node {
 
 	p := &MemNode{
 		ParseTreeNode: b,
-		N8:            uint(offset),
+		N8: uint(offset),
 	}
 
 	count++
 	return p
 }
+
 
 func newLabelNode(label string) Node {
 	b := newParseTreeNode(count)
 
 	p := &LabelNode{
 		ParseTreeNode: b,
-		Label:         label,
+		Label		: label,
 	}
 
 	count++
 	return p
 }
+
 
 func newGotoNode(label string) Node {
 	b := newParseTreeNode(count)
 
 	p := &GotoNode{
 		ParseTreeNode: b,
-		Label:         label,
+		Label: label,
 	}
 
 	count++
 	return p
 }
+
 
 func newSysCallNode(label string, arity int) Node {
 	b := newParseTreeNode(count)
 
 	p := &SysCallNode{
 		ParseTreeNode: b,
-		Label:         label,
-		Arity:         uint(arity),
+		Label: label,
+		Arity: uint(arity),
 	}
 
 	count++
 	return p
 }
+
 
 func newCallNode(dest Node, arity int) Node {
 	b := newParseTreeNode(count)
@@ -328,6 +340,7 @@ func newCallNode(dest Node, arity int) Node {
 	return p
 }
 
+
 func newTailcallNode(dest Node, arity int) Node {
 	p := &SysCallNode{
 		Arity: uint(arity),
@@ -338,6 +351,7 @@ func newTailcallNode(dest Node, arity int) Node {
 
 	return p
 }
+
 
 func newReturnNode() Node {
 	b := newParseTreeNode(count)
@@ -355,7 +369,7 @@ func newTokenNode(token string) Node {
 
 	p := &LabelNode{
 		ParseTreeNode: b,
-		Label:         token,
+		Label		: token,
 	}
 
 	count++
