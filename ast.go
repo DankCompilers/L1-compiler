@@ -137,6 +137,7 @@ type CallNode struct {
 
 type TailcallNode struct {
 	ParseTreeNode
+	Arity uint
 }
 
 type ReturnNode struct {
@@ -342,9 +343,10 @@ func newCallNode(dest Node, arity int) Node {
 
 
 func newTailcallNode(dest Node, arity int) Node {
-	p := &SysCallNode{
+	p := &TailcallNode{
 		Arity: uint(arity),
 	}
+
 	p.SetNodeId(count)
 	p.AppendChild(dest)
 	count++

@@ -6,6 +6,9 @@ package l1compiler
 // 	"os"
 // 	"strconv"
 // 	"strings"
+// 	"reflect"
+// 	"regexp"
+// 	"bytes"
 // )
 //
 // var calleeArray = [...]string{"%rbx", "%rbp", "%r12", "%r13", "%r14", "%r15"}
@@ -30,44 +33,51 @@ package l1compiler
 // }
 //
 // func labelToASM(label string) string {
-//
 // 	newLabel := strings.TrimLeft(label, ":")
 // 	newLabel = "_" + newLabel
 //
 // 	return newLabel
 // }
 //
-// type codeGenerator interface {
+// type CodeGenerator interface {
 // 	beginCompiler(Node) error
 // }
 //
 // type AsmCodeGenerator struct {
-// 	writer *bufio.Writer
+//    seenLabels[string]string
+//    seenFuncs map[string]FunctionNode
+//    writer *bufio.Writer
 // }
 //
-// func L1toASMGenerator() *AsmCodeGenerator {
-// 	return &AsmCodeGenerator{}
+// func newASMGenerator() *AsmCodeGenerator {
+//    return &AsmCodeGenerator{}
+// }
+//
+//
+// func genSaveCalleeRegisters() string {
+//    var buff bytes.Buffer
+//
+//    for _, reg := range calleeArray {
+// 	  toWrite := fmt.Sprintf("push  %%s \n", reg)
+// 	  c.writer.WriteString(toWrite)
+//    }
 // }
 //
 // func (c *AsmCodeGenerator) compNode(node Node) {
-//
 // 	if node == nil {
 // 		return
 // 	}
 //
 // 	switch n := node.(type) {
-//
 // 	default:
 // 		return
 //
 // 	case *ProgramNode:
+// 	    //write header of code
 // 		c.writer.WriteString(".text \n")
 // 		c.writer.WriteString(".globl go \n")
 // 		c.writer.WriteString("go: \n")
-// 		for _, reg := range calleeArray {
-// 			toWrite := fmt.Sprintf("push  %%s \n", reg)
-// 			c.writer.WriteString(toWrite)
-// 		}
+// 	   c.writer.WriteString(genSaveCalleeRegisters())
 //
 // 		c.compNode(n.children[0])
 //
@@ -283,10 +293,12 @@ package l1compiler
 // 	}
 // }
 //
-// func (c *AsmCodeGenerator) beginCompiler(ast Node) error {
-// 	file, err := os.Create("L1generatedASM.txt")
+// func (c *AsmCodeGenerator) genFromTree(ast Node, output_file string) error {
+// 	file, err := os.Create(output_file)
 // 	defer file.Close()
+//
 // 	if err != nil {
+// 		fmt.Println("Could not open output file: ", err)
 // 		return err
 // 	}
 //
