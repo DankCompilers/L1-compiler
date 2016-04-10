@@ -53,6 +53,7 @@ func (c *Compiler) PlotAst(filename string) error {
 	if err != nil {
 		return err
 	}
+
 	err = open(filename)
 	return err
 }
@@ -66,7 +67,12 @@ func (c *Compiler) Compile(filename string) error {
   if err != nil {
     return err
   }
+   
+  err = c.PlotAst("plot.pdf")
 
+  if err != nil {
+   return err
+  }
   // err = c.generateCode()
   //
   // if err != nil {

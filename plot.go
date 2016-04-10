@@ -9,6 +9,7 @@ import (
 )
 
 var fspf = fmt.Sprintf
+var pln = fmt.Println
 
 func intToString(value int) string {
 	return strconv.Itoa(value)
@@ -31,6 +32,10 @@ func createLabel(node Node) string {
 	case *AssignNode:
 		return "<-"
 
+   case *LabelNode:
+	  pln("Found Label Node: %v ", n)
+	  return fspf("Label: %s", n.Label)
+
 	case *OpNode:
 		return n.Operator
 
@@ -38,21 +43,32 @@ func createLabel(node Node) string {
 	   return fspf("%s: %s %s", n.Operator)
 
    case *CjumpNode:
-	   return fspf("%s: %s %s", n.Operator, n.TrueLabel, n.FalseLabel)
+	   return fspf("Cjump: %v %v", n.TrueLabel, n.FalseLabel)
 
 	case *TokenNode:
+	   pln("Found Token Node: %v", n)
 		return n.Value
 
 	case *CallNode:
-		return fspf("Call %d")
+	    pln("Detected call node")
+		return fspf("Call %d", n.Arity)
 
 	case *SysCallNode:
-	   return fspf("%d : %d", n.Label, n.Arity)
+	    pln(fspf("%s : %d", n.Label, n.Arity))
+	    pln("Detected syscall node")
+	   return fspf("%s : %d", n.Label, n.Arity)
 
 	case *TailcallNode:
+	    pln("Detected tailcall node")
 	   return fspf("TailCall %d", n.Arity)
+
    case *ReturnNode:
+	   pln("Found return Node")
 	   return "Return"
+
+   case *MemNode:
+	  pln("Found MemNode")
+	  return fspf("Mem: %d", n.N8)
 	default:
 		fmt.Printf("CreateLabel: unexpected node type %T", n)
 		panic("CreateLabel")

@@ -72,38 +72,39 @@ instruction: LPAREN innerinstruction RPAREN
 }
 |  label
 {
+	fmt.Printf("Detected label: %s", $1)
 	$$ = $1
 }
 
 
 innerinstruction: w ASSIGN s
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %v <- %v \n",  $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 |	w ASSIGN mem
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %v <- %v \n", $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 | mem ASSIGN s
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %v <- %v \n", $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 | w AOP t
 {
-	//fmt.Printf("Detected aop \n")
+	fmt.Printf("Detected aop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP sx
 {
-	//fmt.Printf("Detected sop \n")
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP num
 {
-	//fmt.Printf("Detected sop \n")
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 |  w ASSIGN cmp_op
@@ -112,7 +113,7 @@ innerinstruction: w ASSIGN s
 }
 |  GOTO LABEL
 {
-	//fmt.Printf("Detected goto: %q\n", $2)
+	fmt.Printf("Detected goto: %s\n", $2)
 	$$ = newGotoNode($2)
 }
 | CJUMP cmp_op LABEL LABEL
@@ -141,15 +142,15 @@ innerinstruction: w ASSIGN s
 
 syscalls: CALL PRINT NAT6
 {
-	$$ = newSysCallNode($2, 1)
+	$$ = newSysCallNode("print", 1)
 }
 | CALL ALLOCATE NAT6
 {
-	$$ = newSysCallNode($2, 2)
+	$$ = newSysCallNode("allocate", 2)
 }
 | CALL ARRAYERROR NAT6
 {
-	$$= newSysCallNode($2, 3)
+	$$= newSysCallNode("arrayerror", 3)
 }
 
 
@@ -209,6 +210,7 @@ n8: N8 	{ $$ = $1 }
 
 label: LABEL
 {
+   fmt.Printf("Detected label: %2\n", $1)
 	$$ = newLabelNode($1)
 }
 %%
