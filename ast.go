@@ -155,7 +155,7 @@ type ReturnNode struct {
 
 type TokenNode struct {
 	ParseTreeNode
-	Value string
+	Label string
 }
 
 /*********************** HELPER DEFINITIONS /********************************/
@@ -353,7 +353,7 @@ func newTailcallNode(dest Node, arity int) Node {
 func newReturnNode() Node {
 	b := newParseTreeNode(count)
 
-	p := &SysCallNode{
+	p := &ReturnNode{
 		ParseTreeNode: b,
 	}
 
