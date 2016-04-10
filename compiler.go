@@ -49,6 +49,17 @@ func (c *Compiler) GenerateCode() error {
 	return err
 }
 
+
+func (c *Compiler) PlotAst(filename string) error {
+   err := plot(c.ast, filename)
+   if err != nil {
+	  return err
+   }
+
+   err = open(filename)
+   return err
+}
+
 /// Only exposed function that wraps the parse and code generation functions
 
 func (c *Compiler) Compile(filename string) error {
@@ -56,6 +67,12 @@ func (c *Compiler) Compile(filename string) error {
 
 	if err != nil {
 		return err
+	}
+
+	err = c.PlotAst("plot.pdf")
+
+	if err != nil {
+	   return err
 	}
 
 	// err = c.generateCode()
