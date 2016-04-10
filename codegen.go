@@ -48,10 +48,9 @@ func labelToASM(label string) string {
 		return inputToStore
 
 	} else if _, ok := eightBitEquiv[label]; ok {
-		//c.writer.WriteString("movq %%s, %%s", tokenVal, destination)
-		//c.writer.WriteString("in reg case \n")
 		inputToStore := "%" + label
 		return inputToStore
+
 	} else {
 		newLabel := strings.TrimLeft(label, ":")
 		newLabelNew := "_" + newLabel + ":"
@@ -106,9 +105,6 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		}
 		c.writer.WriteString("retq\n")
 
-		//	case *AssignNode:
-		//		mem, value := n.children[:]
-		//		c.writer.WriteString("movq $%d, %s \n", value, mem)
 	case nil:
 		//return
 	case *SubProgramNode:
@@ -152,15 +148,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		var shiftAmount string
 		var toWrite string
-		/*
-			if op := n.Operator; op == ">>=" {
-				instruct = "sarq"
-			} else {
-				instruct = "salq"
-			}
-			toWrite := fmt.Sprintf("%s %s, %s\n", instruct, value, mem)
-			c.writer.WriteString(toWrite)
-		*/
+
 		if aop, ok := aopMAP[n.Operator]; ok {
 			toWrite = fmt.Sprintf("%s, %s, %s\n", aop, op2, op1)
 		} else {
@@ -197,11 +185,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		return 0, "nil", "nil"
 
 	case *CallNode:
+
 		if arity := n.Arity; arity > 6 {
 			spills := 8 * (arity - 6)
 			toWrite := fmt.Sprintf("subq $%d %s\n", spills, "%rsp")
 			c.writer.WriteString(toWrite)
 		}
+
 		_, _, returnedString := c.compNode(n.Front())
 		toWrite := fmt.Sprintf("jmp %s\n", returnedString)
 		c.writer.WriteString(toWrite)
@@ -209,17 +199,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *AssignNode:
 		switch child := n.Front().(type) {
+
 		case *MemNode:
-			//	if child := n.Front(); reflect.TypeOf(child) == MemNode {
-			reg := child.X
+
+			_, _, reg := c.compNode(child.Front())
 			offset := child.N8
 			_ = n.Front()
-			leftChildValue := n.Next().returnLabel()
-			toInput := "%" + leftChildValue
-			if i, err := strconv.Atoi(leftChildValue); err == nil {
-				toInput = "$" + strconv.Itoa(i)
-			}
-
+			_, _, toInput := c.compNode(n.Next())
 			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput, offset, reg)
 			c.writer.WriteString(toWrite)
 			return 0, "nil", "nil"
@@ -231,23 +217,6 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 			default:
 				_, _, inputToStore := c.compNode(lChild)
-				/*
-					tokenVal := lChild.returnLabel()
-					//tokenVal := "rdi"
-					//fmt.Printf(tokenVal)
-					if _, ok := eightBitEquiv[tokenVal]; ok {
-						//c.writer.WriteString("movq %%s, %%s", tokenVal, destination)
-						c.writer.WriteString("in reg case \n")
-						//inputToStore = "%" + tokenVal
-
-					} else if _, err := strconv.Atoi(tokenVal); err == nil {
-						c.writer.WriteString("in num case \n")
-						inputToStore = "$" + tokenVal
-					}
-					//c.writer.WriteString(destination)
-					//toSing := fmt.Sprintf("here is tokenVal %s \n", tokenVal)
-					//c.writer.WriteString(toSing)
-				*/
 				toWrite := fmt.Sprintf("movq %s, %s\n", inputToStore, destination)
 				c.writer.WriteString(toWrite)
 
