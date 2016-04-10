@@ -115,7 +115,7 @@ type CmpopNode struct {
 type MemNode struct {
 	ParseTreeNode
 	X  string
-	N8 uint
+	N8 int
 }
 
 type LabelNode struct {
@@ -284,7 +284,7 @@ func newMemNode(x Node, offset int) Node {
 
 	p := &MemNode{
 		ParseTreeNode: b,
-		N8:            uint(offset),
+		N8:            offset,
 	}
 
 	count++
@@ -333,6 +333,7 @@ func newCallNode(dest Node, arity int) Node {
 	b.AppendChild(dest)
 
 	p := &CallNode{
+		ParseTreeNode: b,
 		Arity: uint(arity),
 	}
 

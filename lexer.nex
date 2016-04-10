@@ -4,9 +4,9 @@
 /[ \t]+/	{ /*ignore whitespace */ }
 
 /return/	{ fmt.Println("RETURN", yylex.Text()); return RETURN }
-/print/	{ fmt.Println("PRINT", yylex.Text()); return PRINT }
-/allocate/	{ fmt.Println("ALLOCATE", yylex.Text()); return ALLOCATE }
-/array-error/	{ fmt.Println("ARRAYERROR", yylex.Text()); return ARRAYERROR }
+/print/	{ fmt.Println("PRINT", yylex.Text()); lval.s = yylex.Text(); return PRINT }
+/allocate/	{ fmt.Println("ALLOCATE", yylex.Text()); lval.s = yylex.Text(); return ALLOCATE }
+/array-error/	{ fmt.Println("ARRAYERROR", yylex.Text()); lval.s = yylex.Text(); return ARRAYERROR }
 /cjump/	{ fmt.Println("CJUMP", yylex.Text()); return CJUMP }
 /goto/	{ fmt.Println("GOTO", yylex.Text()); return GOTO }
 /mem/   { fmt.Println("MEM", yylex.Text()); return MEM }

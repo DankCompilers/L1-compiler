@@ -13,7 +13,7 @@ all:
    endif
 
 	  go tool yacc -o=parser.yacc.go parser.y
-
+	  go build
 test:
 	go test
 clean:

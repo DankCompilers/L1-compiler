@@ -24,7 +24,7 @@ import (
 %token ASSIGN MEM
 %token <s> RSP RCX
 %token <s> X W A
-%type <node> program subProgram func subFunc instruction innerinstruction mem cmp_op syscalls s w u t x a sx num label
+%type <node> program subProgram func subFunc instruction innerinstruction mem cmp_op s w u t x a sx num label
 %type <n> nat n8
 %%
 
@@ -78,32 +78,32 @@ instruction: LPAREN innerinstruction RPAREN
 
 innerinstruction: w ASSIGN s
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %+v   %+v \n", $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 |	w ASSIGN mem
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %+v   %+v \n", $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 | mem ASSIGN s
 {
-	//fmt.Printf("Detected assign \n")
+	fmt.Printf("Detected assign: %+v   %+v \n", $1, $3)
 	$$ = newAssignNode($1, $3)
 }
 | w AOP t
 {
-	//fmt.Printf("Detected aop \n")
+	fmt.Printf("Detected aop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP sx
 {
-	//fmt.Printf("Detected sop \n")
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 | w SOP num
 {
-	//fmt.Printf("Detected sop \n")
+	fmt.Printf("Detected sop \n")
 	$$ = newOpNode($2, $1, $3)
 }
 |  w ASSIGN cmp_op
@@ -117,30 +117,12 @@ innerinstruction: w ASSIGN s
 }
 | CJUMP cmp_op LABEL LABEL
 {
+	fmt.Printf("Detected cjump\n")
 	$$ = newCjumpNode($2, $3, $4)
 }
-|  syscalls
+|  CALL PRINT NAT6
 {
-	$$ = $1
-}
-| CALL u nat
-{
-	$$ = newCallNode($2, $3)
-}
-|  TAILCALL u NAT6
-{
-	$$ = newTailcallNode($2, $3)
-}
-|  RETURN
-{
-	$$ = newReturnNode()
-}
-
-
-
-
-syscalls: CALL PRINT NAT6
-{
+	fmt.Printf("Found a print instruction: %s\n", $2)
 	$$ = newSysCallNode($2, 1)
 }
 | CALL ALLOCATE NAT6
@@ -151,6 +133,26 @@ syscalls: CALL PRINT NAT6
 {
 	$$= newSysCallNode($2, 3)
 }
+| CALL u nat
+{
+	fmt.Printf("Detected call node: %+v   %+v \n", $2, $3)
+	fmt.Printf("Detected call node: %+v   %+v \n", $2, $3)
+	finalCall := newCallNode($2, $3)
+	fmt.Printf("Final call node: %+v", finalCall)
+	$$ = finalCall
+}
+|  TAILCALL u NAT6
+{
+	fmt.Printf("Detected tailcall\n")
+	$$ = newTailcallNode($2, $3)
+}
+|  RETURN
+{
+	$$ = newReturnNode()
+}
+
+
+
 
 
 cmp_op: t CMP t
