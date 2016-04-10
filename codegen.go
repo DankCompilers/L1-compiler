@@ -162,15 +162,16 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			c.writer.WriteString(toWrite)
 		*/
 		if aop, ok := aopMAP[n.Operator]; ok {
-			toWrite = fmt.Sprintf("%s, %s, %s \n", aop, op2, op1)
+			toWrite = fmt.Sprintf("%s, %s, %s\n", aop, op2, op1)
 		} else {
 			sop := sopMap[n.Operator]
-			if shiftAmount, ok := eightBitEquiv[n.children[n.currChild].returnLabel()]; ok {
-				shiftAmount = shiftAmount
+			label := n.children[n.currChild].returnLabel()
+			if shiftBy, ok := eightBitEquiv[label]; ok {
+				shiftAmount = shiftBy
 			} else {
 				shiftAmount = op2
 			}
-			toWrite = fmt.Sprintf("%s, %s, %s", sop, shiftAmount, op1)
+			toWrite = fmt.Sprintf("%s, %s, %s\n", sop, shiftAmount, op1)
 		}
 
 		c.writer.WriteString(toWrite)
