@@ -77,7 +77,6 @@ var defaultRet []interface{} = []interface{}{0, "nil", "nil"}
 func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	if node == nil {
-		//def := &defaultRet
 		return 0, "0", "0"
 	}
 
@@ -85,12 +84,12 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *ProgramNode:
 		c.writer.WriteString(".text\n")
-		//preMain = n.Label
 		main := n.Label
 		toWrite := fmt.Sprintf(".globl %s\n", main)
 		c.writer.WriteString(toWrite)
 		toWrite = fmt.Sprintf("%s:\n", main)
 		c.writer.WriteString(toWrite)
+
 		for _, reg := range calleeArray {
 			toWrite := fmt.Sprintf("push  %s\n", reg)
 			c.writer.WriteString(toWrite)
@@ -103,15 +102,14 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			toWrite := fmt.Sprintf("pop  %s\n", regToWrite)
 			c.writer.WriteString(toWrite)
 		}
+
 		c.writer.WriteString("retq\n")
 
-	case nil:
-		//return
 	case *SubProgramNode:
 		dummyNode := n.Front()
 		c.compNode(dummyNode)
-		iter := len(n.children)
-		for i := 0; i < iter-1; i++ {
+
+		for i := 0, iter := len(n.children); i < iter-1; i++ {
 			c.compNode(n.Next())
 		}
 

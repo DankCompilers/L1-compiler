@@ -340,7 +340,7 @@ func newCallNode(dest Node, arity int) Node {
 }
 
 func newTailcallNode(dest Node, arity int) Node {
-	p := &SysCallNode{
+	p := &TailcallNode{
 		Arity: uint(arity),
 	}
 	p.SetNodeId(count)
@@ -364,7 +364,7 @@ func newReturnNode() Node {
 func newTokenNode(token string) Node {
 	b := newParseTreeNode(count)
 
-	p := &LabelNode{
+	p := &TokenNode {
 		ParseTreeNode: b,
 		Label:         token,
 	}
