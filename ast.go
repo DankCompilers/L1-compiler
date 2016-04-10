@@ -1,5 +1,10 @@
 package l1compiler
 
+
+import (
+
+	"fmt"
+)
 var count int
 
 type Node interface {
@@ -251,6 +256,7 @@ func newOpNode(op string, l, r Node) Node {
 }
 
 func newCmpopNode(op string, l, r Node) Node {
+	fmt.Printf("Making cmpop node: %s", op)
 	b := newParseTreeNode(count)
 	b.AppendChild(l)
 	b.AppendChild(r)

@@ -40,7 +40,7 @@ func createLabel(node Node) string {
 	  return n.Operator
 
    case *CmpopNode:
-	  return fspf("%s: %s %s", n.Operator)
+	  return fspf("%s", n.Operator)
 
    case *CjumpNode:
 	  return fspf("Cjump: %v %v", n.TrueLabel, n.FalseLabel)
@@ -48,6 +48,9 @@ func createLabel(node Node) string {
    case *TokenNode:
 	  pln("Found Token Node: %v", n)
 	  return n.Value
+
+   case *GotoNode:
+   	  return fspf("Goto %s", n.Label)
 
    case *CallNode:
 	  pln("Detected call node")
@@ -141,4 +144,3 @@ func open(outputfile string) error {
    err := cmd.Run()
    return err
 }
-
