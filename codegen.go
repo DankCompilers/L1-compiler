@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	//	"reflect"
 	"strconv"
 	"strings"
 )
@@ -71,9 +70,6 @@ func L1toASMGenerator() *AsmCodeGenerator {
 	return &AsmCodeGenerator{}
 }
 
-var returnHolders []interface{}
-var defaultRet []interface{} = []interface{}{0, "nil", "nil"}
-
 func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	if node == nil {
@@ -108,8 +104,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 	case *SubProgramNode:
 		dummyNode := n.Front()
 		c.compNode(dummyNode)
+		iter := len(n.children)
 
-		for i := 0, iter := len(n.children); i < iter-1; i++ {
+		for i := 0; i < iter-1; i++ {
 			c.compNode(n.Next())
 		}
 
@@ -141,7 +138,6 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *OpNode:
 		_, _, op1 := c.compNode(n.Front())
-		//value := n.Next().returnLabel()
 		_, _, op2 := c.compNode(n.Next())
 
 		var shiftAmount string
@@ -238,7 +234,6 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 			case *MemNode:
 
-				//reset := n.Front()
 				memoryNode := lChild.Front()
 				memX := memoryNode.returnLabel()
 				memOffset := lChild.N8
@@ -259,8 +254,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		opCode := "nil"
 
 		switch op {
-		//		default:
-		//			opCode := nil
+
 		case "<":
 			opCode = "setl"
 		case "<=":
@@ -297,8 +291,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				toWrite := fmt.Sprintf("cmpq $%d, %%s\n", ls, rightSide)
 				c.writer.WriteString(toWrite)
 				switch opCode {
-				//				default:
-				//					nil
+
 				case "setl":
 					opCode = "setg"
 				case "setg":
@@ -326,7 +319,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		noLabel := n.Next().returnLabel()
 
 		var jmpStment string
+
 		switch op {
+
 		case "<=":
 			jmpStment = "jle"
 		case "<":
