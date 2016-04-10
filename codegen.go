@@ -30,6 +30,18 @@ var eightBitEquiv = map[string]string{
 	"rsi": "sil",
 }
 
+var aopMAP = map[string]string{
+	"+=": "addq",
+	"-=": "subq",
+	"*=": "imulq",
+	"&=": "andq",
+}
+
+var sopMap = map[string]string{
+	">>=": "sarq",
+	"<<=": "salq",
+}
+
 func labelToASM(label string) string {
 	if _, err := strconv.Atoi(label); err == nil {
 		inputToStore := "$" + label
@@ -134,31 +146,34 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		}
 
 	case *OpNode:
-		_, _, mem := c.compNode(n.Front())
+		_, _, op1 := c.compNode(n.Front())
 		//value := n.Next().returnLabel()
-		_, _, value := c.compNode(n.Next())
+		_, _, op2 := c.compNode(n.Next())
 
-		var instruct string
-
-		if op := n.Operator; op == ">>=" {
-			instruct = "sarq"
-		} else {
-			instruct = "salq"
-		}
+		var shiftAmount string
+		var toWrite string
 		/*
-			if numRep, err := strconv.Atoi(value); err == nil {
-				value = "$" + strconv.Itoa(numRep)
+			if op := n.Operator; op == ">>=" {
+				instruct = "sarq"
+			} else {
+				instruct = "salq"
 			}
+			toWrite := fmt.Sprintf("%s %s, %s\n", instruct, value, mem)
+			c.writer.WriteString(toWrite)
 		*/
-		lowerReg := eightBitEquiv[mem]
-		toWrite := fmt.Sprintf("%s %s, %s\n", instruct, value, lowerReg)
+		if aop, ok := aopMAP[n.Operator]; ok {
+			toWrite = fmt.Sprintf("%s, %s, %s \n", aop, op2, op1)
+		} else {
+			sop := sopMap[n.Operator]
+			if shiftAmount, ok := eightBitEquiv[n.children[n.currChild].returnLabel()]; ok {
+				shiftAmount = shiftAmount
+			} else {
+				shiftAmount = op2
+			}
+			toWrite = fmt.Sprintf("%s, %s, %s", sop, shiftAmount, op1)
+		}
+
 		c.writer.WriteString(toWrite)
-
-		//	case *CallNode:
-
-		//		u, NAT = n.children[:]
-		//		u := u.value
-		//		NAT := NAT
 
 	case *ReturnNode:
 		c.writer.WriteString("ret\n")
