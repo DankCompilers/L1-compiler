@@ -31,11 +31,21 @@ var eightBitEquiv = map[string]string{
 }
 
 func labelToASM(label string) string {
+	if _, err := strconv.Atoi(label); err == nil {
+		inputToStore := "$" + label
+		return inputToStore
 
-	newLabel := strings.TrimLeft(label, ":")
-	newLabel = "_" + newLabel
+	} else if _, ok := eightBitEquiv[label]; ok {
+		//c.writer.WriteString("movq %%s, %%s", tokenVal, destination)
+		//c.writer.WriteString("in reg case \n")
+		inputToStore := "%" + label
+		return inputToStore
+	} else {
+		newLabel := strings.TrimLeft(label, ":")
+		newLabelNew := "_" + newLabel + ":"
 
-	return newLabel
+		return newLabelNew
+	}
 }
 
 type CodeGenerator interface {
@@ -63,13 +73,15 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 	switch n := node.(type) {
 
 	case *ProgramNode:
-		c.writer.WriteString(".text \n")
-		main := n.returnLabel()
-		toWrite := fmt.Sprintf(".globl %s \n", main)
+		c.writer.WriteString(".text\n")
+		//preMain = n.Label
+		main := n.Label
+		toWrite := fmt.Sprintf(".globl %s\n", main)
 		c.writer.WriteString(toWrite)
-		c.writer.WriteString("go: \n")
+		toWrite = fmt.Sprintf("%s:\n", main)
+		c.writer.WriteString(toWrite)
 		for _, reg := range calleeArray {
-			toWrite := fmt.Sprintf("push  %s \n", reg)
+			toWrite := fmt.Sprintf("push  %s\n", reg)
 			c.writer.WriteString(toWrite)
 		}
 
@@ -77,10 +89,10 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		for i := len(calleeArray) - 1; i >= 0; i-- {
 			regToWrite := calleeArray[i]
-			toWrite := fmt.Sprintf("pop  %s \n", regToWrite)
+			toWrite := fmt.Sprintf("pop  %s\n", regToWrite)
 			c.writer.WriteString(toWrite)
 		}
-		c.writer.WriteString("retq \n")
+		c.writer.WriteString("retq\n")
 
 		//	case *AssignNode:
 		//		mem, value := n.children[:]
@@ -122,8 +134,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		}
 
 	case *OpNode:
-		mem := n.Front().returnLabel()
-		value := n.Next().returnLabel()
+		_, _, mem := c.compNode(n.Front())
+		//value := n.Next().returnLabel()
+		_, _, value := c.compNode(n.Next())
 
 		var instruct string
 
@@ -132,13 +145,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		} else {
 			instruct = "salq"
 		}
-
-		if numRep, err := strconv.Atoi(value); err == nil {
-			value = "$" + strconv.Itoa(numRep)
-		}
-
+		/*
+			if numRep, err := strconv.Atoi(value); err == nil {
+				value = "$" + strconv.Itoa(numRep)
+			}
+		*/
 		lowerReg := eightBitEquiv[mem]
-		toWrite := fmt.Sprintf("%s %s, %s \n", instruct, value, lowerReg)
+		toWrite := fmt.Sprintf("%s %s, %s\n", instruct, value, lowerReg)
 		c.writer.WriteString(toWrite)
 
 		//	case *CallNode:
@@ -147,25 +160,34 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		//		u := u.value
 		//		NAT := NAT
 
+	case *ReturnNode:
+		c.writer.WriteString("ret\n")
+
 	case *LabelNode:
 		newString := labelToASM(n.Label)
 		return 0, "0", newString
 		//c.writer.WriteString(newString + "\n")
 
-	case *GotoNode, *SysCallNode:
-		newString := labelToASM(n.returnLabel())
-		newString = "jmp " + newString + "\n"
+	case *GotoNode:
+		newString := labelToASM(n.Label)
+		newString = fmt.Sprintf("jmp %s\n", newString)
 		c.writer.WriteString(newString)
+		return 0, "nil", "nil"
+
+	case *SysCallNode:
+		//newString := labelToASM(n.Label)
+		newStringFinal := fmt.Sprintf("call %s\n", n.Label)
+		c.writer.WriteString(newStringFinal)
 		return 0, "nil", "nil"
 
 	case *CallNode:
 		if arity := n.Arity; arity > 6 {
 			spills := 8 * (arity - 6)
-			toWrite := fmt.Sprintf("subq $%d %s \n", spills, "%rsp")
+			toWrite := fmt.Sprintf("subq $%d %s\n", spills, "%rsp")
 			c.writer.WriteString(toWrite)
 		}
 		_, _, returnedString := c.compNode(n.Front())
-		toWrite := fmt.Sprintf("jmp %s \n", returnedString)
+		toWrite := fmt.Sprintf("jmp %s\n", returnedString)
 		c.writer.WriteString(toWrite)
 		return 0, "nil", "nil"
 
@@ -182,29 +204,35 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				toInput = "$" + strconv.Itoa(i)
 			}
 
-			toWrite := fmt.Sprintf("movq %s, %d(%s) \n", toInput, offset, reg)
+			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput, offset, reg)
 			c.writer.WriteString(toWrite)
 			return 0, "nil", "nil"
 
 		default:
 
-			destination := n.Front().returnLabel()
+			_, _, destination := c.compNode(n.Front())
 			switch lChild := n.Next().(type) {
 
 			default:
-
 				_, _, inputToStore := c.compNode(lChild)
-				tokenVal := lChild.returnLabel()
-				if _, ok := eightBitEquiv[tokenVal]; ok {
-					//  c.writer.Writer("movq %%s, %%s", tokenVal, destination)
-					inputToStore = "%" + tokenVal
+				/*
+					tokenVal := lChild.returnLabel()
+					//tokenVal := "rdi"
+					//fmt.Printf(tokenVal)
+					if _, ok := eightBitEquiv[tokenVal]; ok {
+						//c.writer.WriteString("movq %%s, %%s", tokenVal, destination)
+						c.writer.WriteString("in reg case \n")
+						//inputToStore = "%" + tokenVal
 
-				} else if _, err := strconv.Atoi(tokenVal); err == nil {
-
-					inputToStore = "$PJIOUJOI" + tokenVal
-				}
-				c.writer.WriteString(destination)
-				toWrite := fmt.Sprintf("movq %s, %s \n", inputToStore, destination)
+					} else if _, err := strconv.Atoi(tokenVal); err == nil {
+						c.writer.WriteString("in num case \n")
+						inputToStore = "$" + tokenVal
+					}
+					//c.writer.WriteString(destination)
+					//toSing := fmt.Sprintf("here is tokenVal %s \n", tokenVal)
+					//c.writer.WriteString(toSing)
+				*/
+				toWrite := fmt.Sprintf("movq %s, %s\n", inputToStore, destination)
 				c.writer.WriteString(toWrite)
 
 				return 0, "nil", "nil"
@@ -213,13 +241,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				onleft, val, _ := c.compNode(lChild) //*****
 				rChild := n.Front().returnLabel()
 				if onleft == 0 {
-					toWrite := fmt.Sprintf("movq $%s, %%s \n", rChild)
+					toWrite := fmt.Sprintf("movq $%s, %%s\n", rChild)
 					c.writer.WriteString(toWrite)
 				} else {
 					eightMapped := eightBitEquiv[rChild]
-					toWrite := fmt.Sprintf("%s %s \n", val, eightMapped)
+					toWrite := fmt.Sprintf("%s %s\n", val, eightMapped)
 					c.writer.WriteString(toWrite)
-					toWrite = fmt.Sprintf("movzbq %s, %s \n", val, rChild)
+					toWrite = fmt.Sprintf("movzbq %s, %s\n", val, rChild)
 					c.writer.WriteString(toWrite)
 				}
 
@@ -232,7 +260,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				memX := memoryNode.returnLabel()
 				memOffset := lChild.N8
 
-				toWrite := fmt.Sprintf("movq %d(%%s), %s \n", memOffset, memX, destination)
+				toWrite := fmt.Sprintf("movq %d(%%s), %s\n", memOffset, memX, destination)
 				c.writer.WriteString(toWrite)
 
 				return 0, "nil", "nil"
@@ -283,7 +311,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 					return 0, boolT, op
 				}
 			} else {
-				toWrite := fmt.Sprintf("cmpq $%d, %%s \n", ls, rightSide)
+				toWrite := fmt.Sprintf("cmpq $%d, %%s\n", ls, rightSide)
 				c.writer.WriteString(toWrite)
 				switch opCode {
 				//				default:
@@ -304,7 +332,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				leftSide = "$" + leftSide
 			}
 
-			toWrite := fmt.Sprintf("cmpq %s, %%s \n", leftSide, rightSide)
+			toWrite := fmt.Sprintf("cmpq %s, %%s\n", leftSide, rightSide)
 			c.writer.WriteString(toWrite)
 			return 1, opCode, op
 		}
@@ -326,9 +354,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			jmpStment = "jge"
 		}
 
-		toWrite := fmt.Sprintf("%s %s \n", jmpStment, yesLabel)
+		toWrite := fmt.Sprintf("%s %s\n", jmpStment, yesLabel)
 		c.writer.WriteString(toWrite)
-		toWrite = fmt.Sprintf("jmp %s \n", noLabel)
+		toWrite = fmt.Sprintf("jmp %s\n", noLabel)
 		c.writer.WriteString(toWrite)
 
 	}
