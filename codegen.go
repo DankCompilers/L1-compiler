@@ -8,8 +8,26 @@ import (
 	"strings"
 )
 
-var calleeArray = [...]string{"%rbx", "%rbp", "%r12", "%r13", "%r14", "%r15", "%rdi"}
-var callerArray = [...]string{"%rax", "%rcx", "%rdx", "%r8", "%r9", "%r10", "%r11"}
+var calleeArray = map[string]bool{
+   "%rbx": false,
+   "%rbp": false,
+   "%r12": false,
+   "%r13": false,
+   "%r14": false,
+   "%r15": false,
+}
+
+var callerArray = map[string]bool{
+   "%rax": false,
+   "%rcx": false,
+   "%rdx": false,
+   "%rsi": false,
+   "%rdi": false,
+   "%r8": false,
+   "%r9": false,
+   "%r10": false,
+   "%r11": false,
+}
 
 var eightBitEquiv = map[string]string{
 	"r10": "r10b",
@@ -29,6 +47,27 @@ var eightBitEquiv = map[string]string{
 	"rsi": "sil",
 }
 
+var allRegisters = map[string]bool{
+	"r10": true,
+	"r13": true,
+	"r8":  true,
+	"rbp": true,
+	"rdi": true,
+	"r11": true,
+	"r14": true,
+	"r9":  true,
+	"rbx": true,
+	"rdx": true,
+	"r12": true,
+	"r15": true,
+	"rax": true,
+	"rcx": true,
+	"rsi": true,
+	"rsp": true,
+}
+
+
+
 var aopMAP = map[string]string{
 	"+=": "addq",
 	"-=": "subq",
@@ -41,12 +80,19 @@ var sopMap = map[string]string{
 	"<<=": "salq",
 }
 
+
+
+var functionList = map[string]*FunctionNode{}
+var labelList = map[string][]string{}
+var functionCalls = map[string]*CallNode{}
+
+
 func labelToASM(label string) string {
 	if _, err := strconv.Atoi(label); err == nil {
 		inputToStore := "$" + label
 		return inputToStore
 
-	} else if _, ok := eightBitEquiv[label]; ok {
+	} else if _, ok := allRegisters[label]; ok {
 		inputToStore := "%" + label
 		return inputToStore
 
@@ -57,6 +103,7 @@ func labelToASM(label string) string {
 		return newLabelNew
 	}
 }
+
 
 type CodeGenerator interface {
 	BeginCompiler(Node) error
@@ -70,6 +117,16 @@ func L1toASMGenerator() *AsmCodeGenerator {
 	return &AsmCodeGenerator{}
 }
 
+func saveCalleeRegisters() string {
+   toWrite := []string{}
+
+   for _, reg := range calleeArray {
+	  toWrite = append(toWrite, fmt.Sprintf("push  %s\n", reg))
+   }
+
+   return strings.Join(toWrite)
+}
+
 func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	if node == nil {
@@ -80,18 +137,16 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *ProgramNode:
 		c.writer.WriteString(".text\n")
-		main := n.Label
-		toWrite := fmt.Sprintf(".globl %s\n", main)
-		c.writer.WriteString(toWrite)
-		toWrite = fmt.Sprintf("%s:\n", main)
+		main := fmt.Sprintf("_%s", n.Label[1:]) //removes colon
+		toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main,main)
 		c.writer.WriteString(toWrite)
 
-		for _, reg := range calleeArray {
-			toWrite := fmt.Sprintf("push  %s\n", reg)
-			c.writer.WriteString(toWrite)
-		}
+		 c.writer.WriteString(saveCalleeRegisters())
+
+		c.writer.WriteString(fmt.Sprintf("call %s\n\n", main))
 
 		c.compNode(n.Front())
+		c.writer.WriteString("\n\n")
 
 		for i := len(calleeArray) - 1; i >= 0; i-- {
 			regToWrite := calleeArray[i]
@@ -108,6 +163,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		for i := 0; i < iter-1; i++ {
 			c.compNode(n.Next())
+			c.writer.WriteString("\n")
 		}
 
 	case *InstructionNode:
@@ -122,15 +178,28 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		label := n.Label
 		locals := n.NumLocals
 		label = labelToASM(label)
-		label = label + "\n"
-		c.writer.WriteString(label)
-		if locals > 0 {
-			toWrite := fmt.Sprintf("subq $%d, %rsp \n", (8 * locals))
+		functionList[label] = n
+
+		label = label
+		c.writer.WriteString(label + "\n")
+
+	    spills := 0
+		 if arity := n.Arity; arity > 6 {
+			spills += 8 * (int(arity) - 6)
+		 }
+
+		 if locals > 0 {
+			spills += int(locals) * 8
+		 }
+
+		 if spills > 0 {
+			toWrite := fmt.Sprintf("subq $%d, %%rsp \n", (8 * locals))
 			c.writer.WriteString(toWrite)
-		}
-		dummyNode := n.Front()
-		c.compNode(dummyNode)
-		iter := len(n.children)
+		 }
+
+		 dummyNode := n.Front()
+		 c.compNode(dummyNode)
+		 iter := len(n.children)
 
 		for i := 0; i < iter-1; i++ {
 			c.compNode(n.Next())
@@ -180,17 +249,15 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *CallNode:
 
-		if arity := n.Arity; arity > 6 {
-			spills := 8 * (arity - 6)
-			toWrite := fmt.Sprintf("subq $%d %s\n", spills, "%rsp")
-			c.writer.WriteString(toWrite)
-		}
 
 		_, _, returnedString := c.compNode(n.Front())
 		toWrite := fmt.Sprintf("jmp %s\n", returnedString)
+		toWriter = fmt.Sprintf("%s\n"
 		c.writer.WriteString(toWrite)
 		return 0, "nil", "nil"
 
+   case *TokenNode:
+	  return 0, "0", labelToASM(n.Value)
 	case *AssignNode:
 		switch child := n.Front().(type) {
 

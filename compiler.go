@@ -75,12 +75,12 @@ func (c *Compiler) Compile(filename string) error {
 	   return err
 	}
 
-	// err = c.generateCode()
-	//
-	// if err != nil {
-	//   fmt.Printf("Code generation error: %q%d", err)
-	//   return err
-	// }
+	err = c.GenerateCode()
+
+	if err != nil {
+	   fmt.Printf("Code generation error: %q%d", err)
+	   return err
+	}
 
 	return nil
-}
+ }
