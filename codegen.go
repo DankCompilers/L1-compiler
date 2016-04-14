@@ -179,13 +179,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *ProgramNode:
 		c.writer.WriteString(".text\n")
-		main := fmt.Sprintf("_%s", n.Label[1:]) //removes colon
+		main := fmt.Sprintf("%s", n.Label[1:]) //removes colon
 		toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main, main)
 		c.writer.WriteString(toWrite)
 
 		c.writer.WriteString(saveCalleeRegisters())
-
-		c.writer.WriteString(fmt.Sprintf("call %s\n\n", main))
+		main = main + ":"
+		c.writer.WriteString(fmt.Sprintf("call _%s\n\n", main))
 
 		c.compNode(n.Front())
 		c.writer.WriteString("\n\n")
