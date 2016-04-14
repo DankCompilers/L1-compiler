@@ -8,26 +8,32 @@ import (
 	"strings"
 )
 
-var calleeArray = map[string]bool{
-   "%rbx": false,
-   "%rbp": false,
-   "%r12": false,
-   "%r13": false,
-   "%r14": false,
-   "%r15": false,
+var calleeArray = [...]string{"%rbx", "%rbp", "%r12", "%r13", "%r14", "%r15"}
+
+/*var calleeArray = map[string]bool{
+	"%rbx": false,
+	"%rbp": false,
+	"%r12": false,
+	"%r13": false,
+	"%r14": false,
+	"%r15": false,
 }
 
+*****MAPS ARENT ORDERED****Different order when you iterate
+
 var callerArray = map[string]bool{
-   "%rax": false,
-   "%rcx": false,
-   "%rdx": false,
-   "%rsi": false,
-   "%rdi": false,
-   "%r8": false,
-   "%r9": false,
-   "%r10": false,
-   "%r11": false,
+	"%rax": false,
+	"%rcx": false,
+	"%rdx": false,
+	"%rsi": false,
+	"%rdi": false,
+	"%r8":  false,
+	"%r9":  false,
+	"%r10": false,
+	"%r11": false,
 }
+*/
+var callerArray = [...]string{"%rax", "%rcx", "%rdx", "%r8", "%r9", "%r10", "%r11"}
 
 var eightBitEquiv = map[string]string{
 	"r10": "r10b",
@@ -66,8 +72,6 @@ var allRegisters = map[string]bool{
 	"rsp": true,
 }
 
-
-
 var aopMAP = map[string]string{
 	"+=": "addq",
 	"-=": "subq",
@@ -80,12 +84,10 @@ var sopMap = map[string]string{
 	"<<=": "salq",
 }
 
-
-
+var return_address string
 var functionList = map[string]*FunctionNode{}
 var labelList = map[string][]string{}
 var functionCalls = map[string]*CallNode{}
-
 
 func labelToASM(label string) string {
 	if _, err := strconv.Atoi(label); err == nil {
@@ -104,7 +106,6 @@ func labelToASM(label string) string {
 	}
 }
 
-
 type CodeGenerator interface {
 	BeginCompiler(Node) error
 }
@@ -117,14 +118,55 @@ func L1toASMGenerator() *AsmCodeGenerator {
 	return &AsmCodeGenerator{}
 }
 
+type spillManage struct {
+	spillArray []int
+	Amount     int
+}
+
+type spillBank interface {
+	spill_accrue(int)
+	spill_thief() int
+}
+
+func (spills spillManage) spill_accrue(spill int) {
+	spills.spillArray = append(spills.spillArray, spill)
+	spills.Amount++
+}
+
+func (spills spillManage) spill_thief() int {
+	val2RET := spills.spillArray[spills.Amount-1]
+	spills.Amount--
+	spills.spillArray = spills.spillArray[:spills.Amount]
+	return val2RET
+}
+
+var spill_manage spillManage
+var spill_bank = spillBank(spill_manage)
+
 func saveCalleeRegisters() string {
-   toWrite := []string{}
+	toWrite := []string{}
+	for _, reg := range calleeArray {
+		toWrite = append(toWrite, fmt.Sprintf("push  %s\n", reg))
+	}
 
-   for _, reg := range calleeArray {
-	  toWrite = append(toWrite, fmt.Sprintf("push  %s\n", reg))
-   }
+	toWriteFinal := strings.Join(toWrite, "")
+	return toWriteFinal
+}
 
-   return strings.Join(toWrite)
+func popCalleeRegisters() string {
+	size := len(calleeArray)
+	//var toWrite [size]string
+	toWrite := make([]string, size)
+	var i = (size - 1)
+	for _, reg := range calleeArray {
+		registerPop := fmt.Sprintf("pop %s\n", reg)
+		toWrite[i] = registerPop
+		i--
+
+	}
+
+	toWriteFinal := strings.Join(toWrite, "")
+	return toWriteFinal
 }
 
 func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
@@ -138,22 +180,16 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 	case *ProgramNode:
 		c.writer.WriteString(".text\n")
 		main := fmt.Sprintf("_%s", n.Label[1:]) //removes colon
-		toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main,main)
+		toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main, main)
 		c.writer.WriteString(toWrite)
 
-		 c.writer.WriteString(saveCalleeRegisters())
+		c.writer.WriteString(saveCalleeRegisters())
 
 		c.writer.WriteString(fmt.Sprintf("call %s\n\n", main))
 
 		c.compNode(n.Front())
 		c.writer.WriteString("\n\n")
-
-		for i := len(calleeArray) - 1; i >= 0; i-- {
-			regToWrite := calleeArray[i]
-			toWrite := fmt.Sprintf("pop  %s\n", regToWrite)
-			c.writer.WriteString(toWrite)
-		}
-
+		c.writer.WriteString(popCalleeRegisters())
 		c.writer.WriteString("retq\n")
 
 	case *SubProgramNode:
@@ -183,23 +219,25 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		label = label
 		c.writer.WriteString(label + "\n")
 
-	    spills := 0
-		 if arity := n.Arity; arity > 6 {
+		spills := 0
+		if arity := n.Arity; arity > 6 {
 			spills += 8 * (int(arity) - 6)
-		 }
+		}
 
-		 if locals > 0 {
+		if locals > 0 {
 			spills += int(locals) * 8
-		 }
+		}
 
-		 if spills > 0 {
+		if spills > 0 {
 			toWrite := fmt.Sprintf("subq $%d, %%rsp \n", (8 * locals))
 			c.writer.WriteString(toWrite)
-		 }
+			spill_manage.spill_accrue(spills)
 
-		 dummyNode := n.Front()
-		 c.compNode(dummyNode)
-		 iter := len(n.children)
+		}
+
+		dummyNode := n.Front()
+		c.compNode(dummyNode)
+		iter := len(n.children)
 
 		for i := 0; i < iter-1; i++ {
 			c.compNode(n.Next())
@@ -233,7 +271,6 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 	case *LabelNode:
 		newString := labelToASM(n.Label)
 		return 0, "0", newString
-		//c.writer.WriteString(newString + "\n")
 
 	case *GotoNode:
 		newString := labelToASM(n.Label)
@@ -242,22 +279,32 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		return 0, "nil", "nil"
 
 	case *SysCallNode:
-		//newString := labelToASM(n.Label)
 		newStringFinal := fmt.Sprintf("call %s\n", n.Label)
 		c.writer.WriteString(newStringFinal)
 		return 0, "nil", "nil"
 
 	case *CallNode:
-
-
 		_, _, returnedString := c.compNode(n.Front())
-		toWrite := fmt.Sprintf("jmp %s\n", returnedString)
-		toWriter = fmt.Sprintf("%s\n"
+		toWrite := fmt.Sprintf("jmp %s\n%s\n", returnedString, return_address)
 		c.writer.WriteString(toWrite)
 		return 0, "nil", "nil"
 
-   case *TokenNode:
-	  return 0, "0", labelToASM(n.Value)
+	case *TailcallNode:
+		var toWrite string
+		_, _, lookup := c.compNode(n.Front())
+		lookupVal := lookup[1 : len(lookup)-1]
+		if _, ok := allRegisters[lookupVal]; ok {
+			toWrite = fmt.Sprintln("jmp * %s", lookup)
+		} else {
+
+			value := spill_manage.spill_thief()
+			toWrite = fmt.Sprintf("addq $%s, %rsp\n jmp %s\n", value, lookup)
+		}
+
+		c.writer.WriteString(toWrite)
+
+	case *TokenNode:
+		return 0, "0", labelToASM(n.Value)
 	case *AssignNode:
 		switch child := n.Front().(type) {
 
@@ -269,6 +316,11 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			_, _, toInput := c.compNode(n.Next())
 			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput, offset, reg)
 			c.writer.WriteString(toWrite)
+
+			if toInput[:1] == "_" {
+				return_address = toInput
+			}
+
 			return 0, "nil", "nil"
 
 		default:
