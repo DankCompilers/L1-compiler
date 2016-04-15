@@ -128,20 +128,30 @@ type spillBank interface {
 	spill_thief() int
 }
 
-func (spills spillManage) spill_accrue(spill int) {
+func (spills *spillManage) spill_accrue(spill int) {
 	spills.spillArray = append(spills.spillArray, spill)
-	spills.Amount++
+	spills.Amount += 1
 }
 
-func (spills spillManage) spill_thief() int {
-	val2RET := spills.spillArray[spills.Amount-1]
-	spills.Amount--
+func (spills *spillManage) spill_thief() int {
+	//index := (spills.Amount - 1)
+	val2RET := spills.spillArray[spills.Amount]
+	//val2RET := spills.spillArray[0]
+	//val2RET := 5
+	//c.writer.WriteString(val2RET)
+	spills.Amount -= 1
 	spills.spillArray = spills.spillArray[:spills.Amount]
+	//spills.spillArray = spills.spillArray[1:]
 	return val2RET
 }
 
-var spill_manage spillManage
+var spill_manage = new(spillManage)
+
+//var spill_bank spillBank(spill_manage);
+
 var spill_bank = spillBank(spill_manage)
+
+//spill_bank = spill_manage
 
 func saveCalleeRegisters() string {
 	toWrite := []string{}
@@ -221,18 +231,20 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		spills := 0
 		if arity := n.Arity; arity > 6 {
-			spills += 8 * (int(arity) - 6)
+			spills += (8 * (int(arity) - 6))
 		}
 
 		if locals > 0 {
 			spills += int(locals) * 8
+			toWrite := fmt.Sprintf("subq $%d, %%rsp \n", (8 * locals))
+			c.writer.WriteString(toWrite)
 		}
 
 		if spills > 0 {
-			toWrite := fmt.Sprintf("subq $%d, %%rsp \n", (8 * locals))
-			c.writer.WriteString(toWrite)
 			spill_manage.spill_accrue(spills)
 
+		} else {
+			spill_manage.spill_accrue(0)
 		}
 
 		dummyNode := n.Front()
@@ -298,7 +310,11 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		} else {
 
 			value := spill_manage.spill_thief()
-			toWrite = fmt.Sprintf("addq $%s, %rsp\n jmp %s\n", value, lookup)
+			if value == 0 {
+				toWrite = fmt.Sprintf("jmp %s\nvalue is: %d\n", lookup, value)
+			} else {
+				toWrite = fmt.Sprintf("addq $%d, %%rsp\njmp %s\n", value, lookup)
+			}
 		}
 
 		c.writer.WriteString(toWrite)
@@ -467,6 +483,9 @@ func (c *AsmCodeGenerator) BeginCompiler(ast Node) error {
 		return err
 	}
 
+	spill_manage.spillArray = make([]int, 1)
+	spill_manage.Amount = 0
+	spill_manage.spillArray[spill_manage.Amount] = 1
 	c.writer = bufio.NewWriter(file)
 	c.compNode(ast)
 	c.writer.Flush()
