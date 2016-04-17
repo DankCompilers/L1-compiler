@@ -10,29 +10,6 @@ import (
 
 var calleeArray = [...]string{"%rbx", "%rbp", "%r12", "%r13", "%r14", "%r15"}
 
-/*var calleeArray = map[string]bool{
-	"%rbx": false,
-	"%rbp": false,
-	"%r12": false,
-	"%r13": false,
-	"%r14": false,
-	"%r15": false,
-}
-
-*****MAPS ARENT ORDERED****Different order when you iterate
-
-var callerArray = map[string]bool{
-	"%rax": false,
-	"%rcx": false,
-	"%rdx": false,
-	"%rsi": false,
-	"%rdi": false,
-	"%r8":  false,
-	"%r9":  false,
-	"%r10": false,
-	"%r11": false,
-}
-*/
 var callerArray = [...]string{"%rax", "%rcx", "%rdx", "%r8", "%r9", "%r10", "%r11"}
 
 var eightBitEquiv = map[string]string{
@@ -134,24 +111,15 @@ func (spills *spillManage) spill_accrue(spill int) {
 }
 
 func (spills *spillManage) spill_thief() int {
-	//index := (spills.Amount - 1)
 	val2RET := spills.spillArray[spills.Amount]
-	//val2RET := spills.spillArray[0]
-	//val2RET := 5
-	//c.writer.WriteString(val2RET)
 	spills.Amount -= 1
 	spills.spillArray = spills.spillArray[:spills.Amount]
-	//spills.spillArray = spills.spillArray[1:]
 	return val2RET
 }
 
 var spill_manage = new(spillManage)
 
-//var spill_bank spillBank(spill_manage);
-
 var spill_bank = spillBank(spill_manage)
-
-//spill_bank = spill_manage
 
 func saveCalleeRegisters() string {
 	toWrite := []string{}
@@ -165,7 +133,6 @@ func saveCalleeRegisters() string {
 
 func popCalleeRegisters() string {
 	size := len(calleeArray)
-	//var toWrite [size]string
 	toWrite := make([]string, size)
 	var i = (size - 1)
 	for _, reg := range calleeArray {
@@ -302,22 +269,30 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		return 0, "nil", "nil"
 
 	case *TailcallNode:
-		var toWrite string
+		var toWrite string = ""
+		var toWrite2 string
+
 		_, _, lookup := c.compNode(n.Front())
 		lookupVal := lookup[1 : len(lookup)-1]
-		if _, ok := allRegisters[lookupVal]; ok {
-			toWrite = fmt.Sprintln("jmp * %s", lookup)
-		} else {
 
-			value := spill_manage.spill_thief()
-			if value == 0 {
-				toWrite = fmt.Sprintf("jmp %s\nvalue is: %d\n", lookup, value)
-			} else {
-				toWrite = fmt.Sprintf("addq $%d, %%rsp\njmp %s\n", value, lookup)
-			}
+		value := spill_manage.spill_thief()
+		if value != 0 {
+			toWrite = fmt.Sprintf("addq $%d, %%rsp\n", value)
 		}
 
-		c.writer.WriteString(toWrite)
+		if _, ok := allRegisters[lookupVal]; ok {
+			toWrite2 = fmt.Sprintln("jmp *%s\n", lookup)
+		} else {
+			toWrite2 = fmt.Sprintf("jmp %s\n", lookup)
+		}
+
+		stringToWrite := toWrite + toWrite2
+
+		///
+
+		///
+
+		c.writer.WriteString(stringToWrite)
 
 	case *TokenNode:
 		return 0, "0", labelToASM(n.Value)
@@ -477,7 +452,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 }
 
 func (c *AsmCodeGenerator) BeginCompiler(ast Node) error {
-	file, err := os.Create("L1generatedASM.txt")
+	file, err := os.Create("a.out")
 	defer file.Close()
 	if err != nil {
 		return err
