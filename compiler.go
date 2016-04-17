@@ -49,17 +49,17 @@ func (c *Compiler) GenerateCode() error {
 	return err
 }
 
-
+/*
 func (c *Compiler) PlotAst(filename string) error {
-   err := plot(c.ast, filename)
-   if err != nil {
-	  return err
-   }
+	err := plot(c.ast, filename)
+	if err != nil {
+		return err
+	}
 
-   err = open(filename)
-   return err
+	err = open(filename)
+	return err
 }
-
+*/
 /// Only exposed function that wraps the parse and code generation functions
 
 func (c *Compiler) Compile(filename string) error {
@@ -69,18 +69,18 @@ func (c *Compiler) Compile(filename string) error {
 		return err
 	}
 
-	err = c.PlotAst("plot.pdf")
+	//	err = c.PlotAst("plot.pdf")
 
-	if err != nil {
-	   return err
-	}
-
+	/*	if err != nil {
+		   return err
+		}
+	*/
 	err = c.GenerateCode()
 
 	if err != nil {
-	   fmt.Printf("Code generation error: %q%d", err)
-	   return err
+		fmt.Printf("Code generation error: %q%d", err)
+		return err
 	}
 
 	return nil
- }
+}
