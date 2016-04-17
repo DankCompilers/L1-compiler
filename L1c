@@ -1,0 +1,10 @@
+#!/bin/sh
+
+
+#argToPass="$1"
+ARGTOPASS="$1"
+
+make clean
+make
+make test varToPass=$ARGTOPASS
+
