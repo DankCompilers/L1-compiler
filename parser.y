@@ -131,7 +131,7 @@ innerinstruction: w ASSIGN s
 }
 | CALL ARRAYERROR NAT6
 {
-	$$= newSysCallNode($2, 3)
+	$$= newSysCallNode("array_error", 3)
 }
 | CALL u nat
 {

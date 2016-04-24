@@ -112,8 +112,9 @@ func (spills *spillManage) spill_accrue(spill int) {
 
 func (spills *spillManage) spill_thief() int {
 	val2RET := spills.spillArray[spills.Amount]
+	//spills.Amount -= 1
+	spills.spillArray = spills.spillArray[0:spills.Amount]
 	spills.Amount -= 1
-	spills.spillArray = spills.spillArray[:spills.Amount]
 	return val2RET
 }
 
@@ -157,17 +158,19 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 	case *ProgramNode:
 		c.writer.WriteString(".text\n")
 		main := fmt.Sprintf("%s", n.Label[1:]) //removes colon
-		toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main, main)
+		//toWrite := fmt.Sprintf(".globl %s\n\n%s:\n", main, main)
+		toWrite := fmt.Sprintf(".globl %s\n\n%s\n", "go", "go:")
 		c.writer.WriteString(toWrite)
 
 		c.writer.WriteString(saveCalleeRegisters())
-		main = main + ":"
+		//main = main + ":"
 		c.writer.WriteString(fmt.Sprintf("call _%s\n\n", main))
-
-		c.compNode(n.Front())
 		c.writer.WriteString("\n\n")
 		c.writer.WriteString(popCalleeRegisters())
 		c.writer.WriteString("retq\n")
+
+		c.compNode(n.Front())
+		c.writer.WriteString("\n\n")
 
 	case *SubProgramNode:
 		dummyNode := n.Front()
@@ -209,10 +212,13 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		if spills > 0 {
 			spill_manage.spill_accrue(spills)
+			c.writer.WriteString("###CALLING SPILL ACCRUE###\n")
 
 		} else {
 			spill_manage.spill_accrue(0)
+			c.writer.WriteString("###CALLING SPILL ACCRUE###\n")
 		}
+		c.writer.WriteString("###IN FUNCTION NODE###\n")
 
 		dummyNode := n.Front()
 		c.compNode(dummyNode)
@@ -230,7 +236,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		var toWrite string
 
 		if aop, ok := aopMAP[n.Operator]; ok {
-			toWrite = fmt.Sprintf("%s, %s, %s\n", aop, op2, op1)
+			toWrite = fmt.Sprintf("%s %s, %s\n", aop, op2, op1)
 		} else {
 			sop := sopMap[n.Operator]
 			label := n.children[n.currChild].returnLabel()
@@ -239,32 +245,49 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			} else {
 				shiftAmount = op2
 			}
-			toWrite = fmt.Sprintf("%s, %s, %s\n", sop, shiftAmount, op1)
+			toWrite = fmt.Sprintf("%s %s, %s\n", sop, shiftAmount, op1)
 		}
 
 		c.writer.WriteString(toWrite)
 
 	case *ReturnNode:
-		c.writer.WriteString("ret\n")
-
+		var toWrite string
+		value := spill_manage.spill_thief()
+		if value == 0 {
+			toWrite = "ret\n"
+		} else {
+			toWrite = fmt.Sprintf("addq $%d, %%rsp\nret\n", value)
+		}
+		ValueWrite := fmt.Sprintf("###moving rsp back by %s###\n", value)
+		c.writer.WriteString(ValueWrite)
+		c.writer.WriteString(toWrite)
+		c.writer.WriteString("###IN RETURN NODE###\n")
+		//c.writer.WriteString("ret\n")
 	case *LabelNode:
+		c.writer.WriteString("###IN LABEL NODE###\n")
 		newString := labelToASM(n.Label)
+		//toWrite := fmt.Sprintf("%s\n", newString)
+		//c.writer.WriteString(toWrite)
 		return 0, "0", newString
 
 	case *GotoNode:
 		newString := labelToASM(n.Label)
-		newString = fmt.Sprintf("jmp %s\n", newString)
+		newString = fmt.Sprintf("jmp %s\n", strings.TrimRight(newString, ":"))
 		c.writer.WriteString(newString)
+		c.writer.WriteString("###It's a goto###\n")
 		return 0, "nil", "nil"
 
 	case *SysCallNode:
-		newStringFinal := fmt.Sprintf("call %s\n", n.Label)
+		tempHold := n.Label
+		tempHoldFinal := strings.TrimRight(tempHold, ":")
+		newStringFinal := fmt.Sprintf("call %s\n", tempHoldFinal)
 		c.writer.WriteString(newStringFinal)
+		//c.writer.WriteString("outyeah")
 		return 0, "nil", "nil"
 
 	case *CallNode:
-		_, _, returnedString := c.compNode(n.Front())
-		toWrite := fmt.Sprintf("jmp %s\n%s\n", returnedString, return_address)
+		_, _, returnedString := c.compNode(n.Front()) //Change needed maybe
+		toWrite := fmt.Sprintf("jmp %s\n%s\n", strings.TrimRight(returnedString, ":"), return_address)
 		c.writer.WriteString(toWrite)
 		return 0, "nil", "nil"
 
@@ -272,10 +295,11 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		var toWrite string = ""
 		var toWrite2 string
 
-		_, _, lookup := c.compNode(n.Front())
+		_, _, lookup := c.compNode(n.Front()) //Change needed
 		lookupVal := lookup[1 : len(lookup)-1]
 
 		value := spill_manage.spill_thief()
+		c.writer.WriteString("###CALLED SPILL_THIEF###\n")
 		if value != 0 {
 			toWrite = fmt.Sprintf("addq $%d, %%rsp\n", value)
 		}
@@ -283,7 +307,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		if _, ok := allRegisters[lookupVal]; ok {
 			toWrite2 = fmt.Sprintln("jmp *%s\n", lookup)
 		} else {
-			toWrite2 = fmt.Sprintf("jmp %s\n", lookup)
+			toWrite2 = fmt.Sprintf("jmp %s\n", strings.TrimRight(lookup, ":"))
 		}
 
 		stringToWrite := toWrite + toWrite2
@@ -295,21 +319,36 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		c.writer.WriteString(stringToWrite)
 
 	case *TokenNode:
+		//toWrite := fmt.Sprintf("TokenVal=%s\n", n.Value)
+		//c.writer.WriteString(toWrite)
+		//toWrite = fmt.Sprintf("TokenVal after change =%s\n", labelToASM(n.Value))
+		//c.writer.WriteString("###IN TOKEN NODE###\n")
 		return 0, "0", labelToASM(n.Value)
-	case *AssignNode:
-		switch child := n.Front().(type) {
 
+	case *AssignNode:
+		var toInput2 string
+		var toInputTemp string = ""
+		switch child := n.Front().(type) {
 		case *MemNode:
 
 			_, _, reg := c.compNode(child.Front())
 			offset := child.N8
 			_ = n.Front()
 			_, _, toInput := c.compNode(n.Next())
-			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput, offset, reg)
+			if lastChar := toInput[0:1]; lastChar == "_" {
+
+				toInputTemp = strings.TrimRight(toInput, ":")
+				toInput2 = "$" + toInputTemp
+			} else {
+				toInput2 = toInput
+			}
+
+			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput2, offset, reg)
 			c.writer.WriteString(toWrite)
 
-			if toInput[:1] == "_" {
+			if toInput[0:1] == "_" {
 				return_address = toInput
+				c.writer.WriteString("subq $8, %rsp\n")
 			}
 
 			return 0, "nil", "nil"
@@ -321,22 +360,27 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 			default:
 				_, _, inputToStore := c.compNode(lChild)
+				if lastChar := inputToStore[:len(inputToStore)-1]; lastChar == ":" {
+
+					inputToStore = strings.TrimRight(inputToStore, ":")
+					inputToStore = "$" + inputToStore
+				}
 				toWrite := fmt.Sprintf("movq %s, %s\n", inputToStore, destination)
 				c.writer.WriteString(toWrite)
 
 				return 0, "nil", "nil"
 
 			case *CmpopNode:
-				onleft, val, _ := c.compNode(lChild) //*****
-				rChild := n.Front().returnLabel()
-				if onleft == 0 {
-					toWrite := fmt.Sprintf("movq $%s, %%s\n", rChild)
+				bothNumb, val, _ := c.compNode(lChild) //*****
+				_, _, rChild := c.compNode(n.Front())
+				if bothNumb == 0 {
+					toWrite := fmt.Sprintf("movq $%s, %s\n", val, rChild)
 					c.writer.WriteString(toWrite)
 				} else {
-					eightMapped := eightBitEquiv[rChild]
+					eightMapped := "%" + eightBitEquiv[strings.TrimLeft(rChild, "%")]
 					toWrite := fmt.Sprintf("%s %s\n", val, eightMapped)
 					c.writer.WriteString(toWrite)
-					toWrite = fmt.Sprintf("movzbq %s, %s\n", val, rChild)
+					toWrite = fmt.Sprintf("movzbq %s, %s\n", eightMapped, rChild)
 					c.writer.WriteString(toWrite)
 				}
 
@@ -345,10 +389,10 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			case *MemNode:
 
 				memoryNode := lChild.Front()
-				memX := memoryNode.returnLabel()
+				_, _, memX := c.compNode(memoryNode)
 				memOffset := lChild.N8
 
-				toWrite := fmt.Sprintf("movq %d(%%s), %s\n", memOffset, memX, destination)
+				toWrite := fmt.Sprintf("movq %d(%s), %s\n", memOffset, memX, destination)
 				c.writer.WriteString(toWrite)
 
 				return 0, "nil", "nil"
@@ -357,11 +401,18 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		}
 
 	case *CmpopNode:
-		op := n.returnCmpop()
-		leftSide := n.Front().returnLabel()
-		rightSide := n.Next().returnLabel()
+		op := n.Operator
+		_, _, leftSide := c.compNode(n.Front()) //Change needed maybe
+		_, _, rightSide := c.compNode(n.Next()) //Change needed maybe
+		//toWrite2 := fmt.Sprintf("TokenVal rightSide after return =%s\n", leftSide)
+		//c.writer.WriteString(toWrite2)
+		leftSide = leftSide[1:]
+		rightSide = rightSide[1:]
 
-		opCode := "nil"
+		//toWrite := fmt.Sprintf("if recursed 0: %d\n", numero)
+		//c.writer.WriteString(toWrite)
+
+		var opCode string
 
 		switch op {
 
@@ -377,28 +428,40 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 		if ls, ok := strconv.Atoi(leftSide); ok == nil {
 			if rs, ok := strconv.Atoi(rightSide); ok == nil {
+
+				var intToReturn string
+				var boolToReturn bool
 				switch op {
 
 				default:
 					return 0, "nil", "nil"
 
 				case "<":
-					boolToReturn := (ls < rs)
-					boolT := strconv.FormatBool(boolToReturn)
-					return 0, boolT, op
+					boolToReturn = (ls < rs)
+					//boolT := strconv.FormatBool(boolToReturn)
+					//return 0, boolT, op
 
 				case "<=":
-					boolToReturn := (ls <= rs)
-					boolT := strconv.FormatBool(boolToReturn)
-					return 0, boolT, op
+					boolToReturn = (ls <= rs)
+					//boolT := strconv.FormatBool(boolToReturn)
+					//return 0, boolT, op
 
 				case "=":
-					boolToReturn := (ls == rs)
-					boolT := strconv.FormatBool(boolToReturn)
-					return 0, boolT, op
+					boolToReturn = (ls == rs)
+					//boolT := strconv.FormatBool(boolToReturn)
+					//return 0, boolT, op
 				}
+
+				if boolToReturn {
+					intToReturn = "1"
+				} else {
+					intToReturn = "0"
+				}
+
+				return 0, intToReturn, op
+
 			} else {
-				toWrite := fmt.Sprintf("cmpq $%d, %%s\n", ls, rightSide)
+				toWrite := fmt.Sprintf("cmpq $%d, %s\n", ls, labelToASM(rightSide))
 				c.writer.WriteString(toWrite)
 				switch opCode {
 
@@ -411,22 +474,30 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 				case "setle":
 					opCode = "setge"
 				}
+
+				c.writer.WriteString("###In 2nd2 last Case###\n")
 				return 1, opCode, op
 			}
 		} else {
-			if _, ok = strconv.Atoi(leftSide); ok == nil {
-				leftSide = "$" + leftSide
-			}
+			//if _, ok = strconv.Atoi(leftSide); ok == nil {
+			//	leftSide = "$" + leftSide
+			//}
 
-			toWrite := fmt.Sprintf("cmpq %s, %%s\n", leftSide, rightSide)
+			//toWrite := fmt.Sprintf("cmpq %s, %s\n", labelToASM(leftSide), labelToASM(rightSide))
+			toWrite := fmt.Sprintf("cmpq %s, %s\n", labelToASM(rightSide), labelToASM(leftSide))
+			c.writer.WriteString(toWrite)
+			c.writer.WriteString("###In last Case###\n")
+			toWrite = fmt.Sprintf("###leftSide is %s###\n###RightSide is %s###\n", leftSide, rightSide)
 			c.writer.WriteString(toWrite)
 			return 1, opCode, op
 		}
 
 	case *CjumpNode:
 		_, _, op := c.compNode(n.Front())
-		yesLabel := n.Next().returnLabel()
-		noLabel := n.Next().returnLabel()
+		//yesLabel := n.Next().returnLabel()
+		yesLabel := labelToASM(n.TrueLabel)
+		//noLabel := n.Next().returnLabel()
+		noLabel := labelToASM(n.FalseLabel)
 
 		var jmpStment string
 
@@ -442,9 +513,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			jmpStment = "jge"
 		}
 
-		toWrite := fmt.Sprintf("%s %s\n", jmpStment, yesLabel)
+		toWrite := fmt.Sprintf("%s %s\n", jmpStment, strings.TrimRight(yesLabel, ":"))
 		c.writer.WriteString(toWrite)
-		toWrite = fmt.Sprintf("jmp %s\n", noLabel)
+		toWrite = fmt.Sprintf("jmp %s\n", strings.TrimRight(noLabel, ":"))
 		c.writer.WriteString(toWrite)
 
 	}
@@ -452,7 +523,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 }
 
 func (c *AsmCodeGenerator) BeginCompiler(ast Node) error {
-	file, err := os.Create("a.out")
+	file, err := os.Create("prog.S")
 	defer file.Close()
 	if err != nil {
 		return err

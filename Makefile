@@ -17,4 +17,4 @@ all:
 test:
 	go test -FileName=$(varToPass)
 clean:
-	-rm *.output *.yacc.go *.nn.go *.pdf *.dot a.out
+	-rm *.output *.yacc.go *.pdf *.dot prog.S prog.o runtime.o a.out

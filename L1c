@@ -8,3 +8,6 @@ make clean
 make
 make test varToPass=$ARGTOPASS
 
+as -o prog.o prog.S
+gcc -O2 -c -g -o runtime.o C-File/runtime.c
+gcc -o a.out prog.o runtime.o
