@@ -20,7 +20,7 @@ import (
 %token <s> AOP SOP CMP
 %token CALL CJUMP TAILCALL RETURN GOTO
 %token LPAREN RPAREN
-%token <s> ALLOCATE PRINT ARRAYERROR
+%token <s> ALLOCATE PRINT ARRAYERROR READ
 %token ASSIGN MEM
 %token <s> RSP RCX
 %token <s> X W A
@@ -124,6 +124,11 @@ innerinstruction: w ASSIGN s
 {
 	fmt.Printf("Found a print instruction: %s\n", $2)
 	$$ = newSysCallNode($2, 1)
+}
+|  CALL READ NAT6
+{
+  fmt.Printf("Found a newly defineed read: %s\n", $2)
+   $$ = newSysCallNode($2, 1)
 }
 | CALL ALLOCATE NAT6
 {

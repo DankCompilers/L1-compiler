@@ -6,6 +6,7 @@
 
 /return/	{ fmt.Println("RETURN", lex.Text()) }
 /print/	{ fmt.Println("PRINT", lex.Text()) }
+/read/ { fmt.Println("READ", lex.Text()) }
 /allocate/	{ fmt.Println("ALLOCATE", lex.Text()) }
 /array-error/	{ fmt.Println("ARRAYERROR", lex.Text()) }
 /cjump/	{ fmt.Println("CJUMP", lex.Text()) }

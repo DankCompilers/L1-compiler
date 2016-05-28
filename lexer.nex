@@ -4,6 +4,7 @@
 /[ \t]+/	{ /*ignore whitespace */ }
 
 /return/	{ fmt.Println("RETURN", yylex.Text()); return RETURN }
+/read/ { fmt.Println("READ", yylex.Text()); lval.s = yylex.Text(); return READ}
 /print/	{ fmt.Println("PRINT", yylex.Text()); lval.s = yylex.Text(); return PRINT }
 /allocate/	{ fmt.Println("ALLOCATE", yylex.Text()); lval.s = yylex.Text(); return ALLOCATE }
 /array-error/	{ fmt.Println("ARRAYERROR", yylex.Text()); lval.s = yylex.Text(); return ARRAYERROR }

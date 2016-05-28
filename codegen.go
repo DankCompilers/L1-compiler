@@ -62,9 +62,12 @@ var sopMap = map[string]string{
 }
 
 var return_address string
-var functionList = map[string]*FunctionNode{}
-var labelList = map[string][]string{}
-var functionCalls = map[string]*CallNode{}
+var label_lock int
+
+//var functionList = map[string]*FunctionNode{}
+//var labelList = map[string][]string{}
+//var functionCalls = map[string]*CallNode{}
+var spill_value int
 
 func labelToASM(label string) string {
 	if _, err := strconv.Atoi(label); err == nil {
@@ -83,6 +86,14 @@ func labelToASM(label string) string {
 	}
 }
 
+func cmp_num_left(onleft string, onright string, decider int) string {
+	if decider == 1 {
+		return onleft
+	} else {
+		return onright
+	}
+}
+
 type CodeGenerator interface {
 	BeginCompiler(Node) error
 }
@@ -95,6 +106,7 @@ func L1toASMGenerator() *AsmCodeGenerator {
 	return &AsmCodeGenerator{}
 }
 
+/*
 type spillManage struct {
 	spillArray []int
 	Amount     int
@@ -121,7 +133,7 @@ func (spills *spillManage) spill_thief() int {
 var spill_manage = new(spillManage)
 
 var spill_bank = spillBank(spill_manage)
-
+*/
 func saveCalleeRegisters() string {
 	toWrite := []string{}
 	for _, reg := range calleeArray {
@@ -194,7 +206,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		label := n.Label
 		locals := n.NumLocals
 		label = labelToASM(label)
-		functionList[label] = n
+		//functionList[label] = n
 
 		label = label
 		c.writer.WriteString(label + "\n")
@@ -209,17 +221,26 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			toWrite := fmt.Sprintf("subq $%d, %%rsp \n", (8 * locals))
 			c.writer.WriteString(toWrite)
 		}
+		/*
+			if spills > 0 {
+				spill_manage.spill_accrue(spills)
+				//toWrite := fmt.Sprintf("###CALLING SPILL ACCRUE with %d###\n", spills)
+				//c.writer.WriteString(toWrite)
+				toWrite := fmt.Sprintf("###CALLING FUNCTION NODE WITH SPILL: %d###\n", spills)
+				c.writer.WriteString(toWrite)
 
-		if spills > 0 {
-			spill_manage.spill_accrue(spills)
-			c.writer.WriteString("###CALLING SPILL ACCRUE###\n")
+			} else {
+				spill_manage.spill_accrue(0)
+				toWrite := fmt.Sprintf("###CALLING SPILL ACCRUE with %d###\n", 0)
+				c.writer.WriteString(toWrite)
+			}
+		*/
 
-		} else {
-			spill_manage.spill_accrue(0)
-			c.writer.WriteString("###CALLING SPILL ACCRUE###\n")
-		}
+		toWrite := fmt.Sprintf("###CALLING FUNCTION NODE WITH SPILL: %d###\n", spills)
+		c.writer.WriteString(toWrite)
 		c.writer.WriteString("###IN FUNCTION NODE###\n")
-
+		//value = spill_manage.spill_thief()
+		spill_value = spills
 		dummyNode := n.Front()
 		c.compNode(dummyNode)
 		iter := len(n.children)
@@ -239,9 +260,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			toWrite = fmt.Sprintf("%s %s, %s\n", aop, op2, op1)
 		} else {
 			sop := sopMap[n.Operator]
-			label := n.children[n.currChild].returnLabel()
-			if shiftBy, ok := eightBitEquiv[label]; ok {
-				shiftAmount = shiftBy
+			//label := n.children[n.currChild].returnLabel()
+			if shiftBy, ok := eightBitEquiv[strings.TrimLeft(op2, "%")]; ok {
+				shiftAmount = "%" + shiftBy
 			} else {
 				shiftAmount = op2
 			}
@@ -252,23 +273,32 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 
 	case *ReturnNode:
 		var toWrite string
-		value := spill_manage.spill_thief()
-		if value == 0 {
+		//value := spill_manage.spill_thief()
+		if spill_value == 0 {
 			toWrite = "ret\n"
 		} else {
-			toWrite = fmt.Sprintf("addq $%d, %%rsp\nret\n", value)
+			toWrite = fmt.Sprintf("addq $%d, %%rsp\nret\n", spill_value)
 		}
-		ValueWrite := fmt.Sprintf("###moving rsp back by %s###\n", value)
+		ValueWrite := fmt.Sprintf("###moving rsp back by %s###\n", spill_value)
 		c.writer.WriteString(ValueWrite)
 		c.writer.WriteString(toWrite)
 		c.writer.WriteString("###IN RETURN NODE###\n")
 		//c.writer.WriteString("ret\n")
+
 	case *LabelNode:
 		c.writer.WriteString("###IN LABEL NODE###\n")
 		newString := labelToASM(n.Label)
-		//toWrite := fmt.Sprintf("%s\n", newString)
-		//c.writer.WriteString(toWrite)
-		return 0, "0", newString
+		if label_lock == 1 {
+			c.writer.WriteString("###label_lock is entering locked###\n")
+			label_lock = 0
+			c.writer.WriteString("###label_lock is leaving unlocked###\n")
+			return 0, "0", newString
+		} else {
+			c.writer.WriteString("###label_lock is entering ulocked###\n")
+			toWrite := fmt.Sprintf("%s\n", newString)
+			c.writer.WriteString(toWrite)
+			c.writer.WriteString("###label_lock is leaving still unlocked###\n")
+		}
 
 	case *GotoNode:
 		newString := labelToASM(n.Label)
@@ -286,27 +316,62 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		return 0, "nil", "nil"
 
 	case *CallNode:
+		var actualSub int
+		var convers8 int = 8
+		var jmpTo string
+		label_lock = 1
+		c.writer.WriteString("###locking label_lock###\n")
 		_, _, returnedString := c.compNode(n.Front()) //Change needed maybe
-		toWrite := fmt.Sprintf("jmp %s\n%s\n", strings.TrimRight(returnedString, ":"), return_address)
+
+		if possibleSub := (int(n.Arity) - 6); possibleSub > 0 {
+			actualSub = (8 * possibleSub) + convers8
+		} else {
+			actualSub = convers8
+		}
+
+		toWrite2 := fmt.Sprintf("subq $%d, %%rsp\n", actualSub)
+		c.writer.WriteString(toWrite2)
+
+		if returnedString[0:1] == "%" {
+			c.writer.WriteString("###Indirect Jmp###\n")
+			jmpTo = "*" + returnedString
+		} else {
+			c.writer.WriteString("###Direct Jmp###\n")
+			jmpTo = strings.TrimRight(returnedString, ":")
+		}
+
+		toWrite := fmt.Sprintf("jmp %s\n%s\n", jmpTo, return_address)
+		label_lock = 1
+		c.writer.WriteString("###locking label_lock###\n")
 		c.writer.WriteString(toWrite)
 		return 0, "nil", "nil"
 
 	case *TailcallNode:
 		var toWrite string = ""
 		var toWrite2 string
+		var lookup string
 
-		_, _, lookup := c.compNode(n.Front()) //Change needed
-		lookupVal := lookup[1 : len(lookup)-1]
+		switch n.Front().(type) {
+		case *LabelNode:
+			label_lock = 1
+			c.writer.WriteString("###Possible Label###\n")
+			c.writer.WriteString("###locking label_lock###\n")
+		}
+		_, _, lookup = c.compNode(n.Front()) //Change needed
+		//lookupVal := lookup[1 : len(lookup)-1]
 
-		value := spill_manage.spill_thief()
+		//value := spill_manage.spill_thief()
 		c.writer.WriteString("###CALLED SPILL_THIEF###\n")
-		if value != 0 {
-			toWrite = fmt.Sprintf("addq $%d, %%rsp\n", value)
+		if spill_value != 0 {
+			toWrite = fmt.Sprintf("addq $%d, %%rsp\n", spill_value)
 		}
 
-		if _, ok := allRegisters[lookupVal]; ok {
-			toWrite2 = fmt.Sprintln("jmp *%s\n", lookup)
+		if lookup[0:1] == "%" {
+			c.writer.WriteString("###Tail call indirect jmp###\n")
+			//lookup = "*" + lookup
+			toWrite2 = fmt.Sprintf("jmp *%s\n", lookup)
 		} else {
+			c.writer.WriteString("###Tail call direct jmp###\n")
 			toWrite2 = fmt.Sprintf("jmp %s\n", strings.TrimRight(lookup, ":"))
 		}
 
@@ -326,6 +391,7 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		return 0, "0", labelToASM(n.Value)
 
 	case *AssignNode:
+		var toInput string
 		var toInput2 string
 		var toInputTemp string = ""
 		switch child := n.Front().(type) {
@@ -334,33 +400,51 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			_, _, reg := c.compNode(child.Front())
 			offset := child.N8
 			_ = n.Front()
-			_, _, toInput := c.compNode(n.Next())
-			if lastChar := toInput[0:1]; lastChar == "_" {
+			//	_, _, toInput := c.compNode(n.Next())
 
+			switch inputNode := n.Next().(type) {
+			case *LabelNode:
+				label_lock = 1
+				_, _, toInput = c.compNode(inputNode)
 				toInputTemp = strings.TrimRight(toInput, ":")
 				toInput2 = "$" + toInputTemp
-			} else {
+			default:
+				_, _, toInput = c.compNode(inputNode)
 				toInput2 = toInput
 			}
+
+			//if lastChar := toInput[0:1]; lastChar == "_" {
+
+			//toInputTemp = strings.TrimRight(toInput, ":")
+			//toInput2 = "$" + toInputTemp
+			//	} else {
+			//toInput2 = toInput
+			//	}
 
 			toWrite := fmt.Sprintf("movq %s, %d(%s)\n", toInput2, offset, reg)
 			c.writer.WriteString(toWrite)
 
 			if toInput[0:1] == "_" {
 				return_address = toInput
-				c.writer.WriteString("subq $8, %rsp\n")
+				//label_lock = 1
+				//c.writer.WriteString("subq $8, %rsp\n")
 			}
 
 			return 0, "nil", "nil"
 
 		default:
-
+			_ = n.Front()
+			switch n.Next().(type) {
+			case *LabelNode:
+				label_lock = 1
+				c.writer.WriteString("###locking label_lock###\n")
+			}
 			_, _, destination := c.compNode(n.Front())
 			switch lChild := n.Next().(type) {
 
 			default:
 				_, _, inputToStore := c.compNode(lChild)
-				if lastChar := inputToStore[:len(inputToStore)-1]; lastChar == ":" {
+				if lastChar := inputToStore[0:1]; lastChar == "_" {
 
 					inputToStore = strings.TrimRight(inputToStore, ":")
 					inputToStore = "$" + inputToStore
@@ -419,9 +503,9 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 		case "<":
 			opCode = "setl"
 		case "<=":
-			opCode = "setge"
-		case ">=":
 			opCode = "setle"
+		case ">=":
+			opCode = "setge"
 		case "=":
 			opCode = "sete"
 		}
@@ -489,28 +573,32 @@ func (c *AsmCodeGenerator) compNode(node Node) (int, string, string) {
 			c.writer.WriteString("###In last Case###\n")
 			toWrite = fmt.Sprintf("###leftSide is %s###\n###RightSide is %s###\n", leftSide, rightSide)
 			c.writer.WriteString(toWrite)
-			return 1, opCode, op
+			return 2, opCode, op
 		}
 
 	case *CjumpNode:
-		_, _, op := c.compNode(n.Front())
+		//var isNum int = 0
+		isNum, _, op := c.compNode(n.Front())
 		//yesLabel := n.Next().returnLabel()
 		yesLabel := labelToASM(n.TrueLabel)
 		//noLabel := n.Next().returnLabel()
 		noLabel := labelToASM(n.FalseLabel)
 
+		//if _, err := strconv.Atoi(n.TrueLabel); err == nil {
+		//	isNum = 1
+		//}
 		var jmpStment string
 
 		switch op {
 
 		case "<=":
-			jmpStment = "jle"
+			jmpStment = cmp_num_left("jg", "jle", isNum)
 		case "<":
-			jmpStment = "jl"
+			jmpStment = cmp_num_left("jge", "jl", isNum)
 		case "=":
-			jmpStment = "je"
+			jmpStment = cmp_num_left("jne", "je", isNum)
 		case ">=":
-			jmpStment = "jge"
+			jmpStment = cmp_num_left("jl", "jge", isNum)
 		}
 
 		toWrite := fmt.Sprintf("%s %s\n", jmpStment, strings.TrimRight(yesLabel, ":"))
@@ -528,10 +616,12 @@ func (c *AsmCodeGenerator) BeginCompiler(ast Node) error {
 	if err != nil {
 		return err
 	}
-
-	spill_manage.spillArray = make([]int, 1)
-	spill_manage.Amount = 0
-	spill_manage.spillArray[spill_manage.Amount] = 1
+	/*
+		spill_manage.spillArray = make([]int, 1)
+		spill_manage.Amount = 0
+		spill_manage.spillArray[spill_manage.Amount] = 5
+	*/label_lock = 0
+	spill_value = 0
 	c.writer = bufio.NewWriter(file)
 	c.compNode(ast)
 	c.writer.Flush()

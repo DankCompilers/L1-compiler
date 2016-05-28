@@ -383,6 +383,75 @@ func NewLexerWithInit(in io.Reader, initFun func(*Lexer)) *Lexer {
 			},
 		}, []int{ /* Start-of-input transitions */ -1, -1, -1, -1, -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1, -1, -1, -1, -1}, nil},
 
+		// read
+		{[]bool{false, false, false, false, true}, []func(rune) int{ // Transitions
+			func(r rune) int {
+				switch r {
+				case 97:
+					return -1
+				case 100:
+					return -1
+				case 101:
+					return -1
+				case 114:
+					return 1
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 97:
+					return -1
+				case 100:
+					return -1
+				case 101:
+					return 2
+				case 114:
+					return -1
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 97:
+					return 3
+				case 100:
+					return -1
+				case 101:
+					return -1
+				case 114:
+					return -1
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 97:
+					return -1
+				case 100:
+					return 4
+				case 101:
+					return -1
+				case 114:
+					return -1
+				}
+				return -1
+			},
+			func(r rune) int {
+				switch r {
+				case 97:
+					return -1
+				case 100:
+					return -1
+				case 101:
+					return -1
+				case 114:
+					return -1
+				}
+				return -1
+			},
+		}, []int{ /* Start-of-input transitions */ -1, -1, -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1, -1, -1}, nil},
+
 		// print
 		{[]bool{false, false, false, false, false, true}, []func(rune) int{ // Transitions
 			func(r rune) int {
@@ -2476,56 +2545,62 @@ OUTER0:
 			}
 		case 5:
 			{
+				fmt.Println("READ", yylex.Text())
+				lval.s = yylex.Text()
+				return READ
+			}
+		case 6:
+			{
 				fmt.Println("PRINT", yylex.Text())
 				lval.s = yylex.Text()
 				return PRINT
 			}
-		case 6:
+		case 7:
 			{
 				fmt.Println("ALLOCATE", yylex.Text())
 				lval.s = yylex.Text()
 				return ALLOCATE
 			}
-		case 7:
+		case 8:
 			{
 				fmt.Println("ARRAYERROR", yylex.Text())
 				lval.s = yylex.Text()
 				return ARRAYERROR
 			}
-		case 8:
+		case 9:
 			{
 				fmt.Println("CJUMP", yylex.Text())
 				return CJUMP
 			}
-		case 9:
+		case 10:
 			{
 				fmt.Println("GOTO", yylex.Text())
 				return GOTO
 			}
-		case 10:
+		case 11:
 			{
 				fmt.Println("MEM", yylex.Text())
 				return MEM
 			}
-		case 11:
+		case 12:
 			{
 				fmt.Println("ASSIGN", yylex.Text())
 				return ASSIGN
 			}
-		case 12:
+		case 13:
 			{
 				fmt.Println("CALL", yylex.Text())
 				return CALL
 			}
-		case 13:
+		case 14:
 			{
 				fmt.Println("TAILCALL", yylex.Text())
 				return TAILCALL
 			}
-		case 14:
+		case 15:
 			{ /* ignore */
 			}
-		case 15:
+		case 16:
 			{
 				fmt.Println("NUM", yylex.Text())
 				//lval.s = yylex.Text()
@@ -2549,55 +2624,55 @@ OUTER0:
 					return NEG
 				}
 			}
-		case 16:
+		case 17:
 			{
 				fmt.Println("RCX", yylex.Text())
 				lval.s = yylex.Text()
 				return RCX
 			}
-		case 17:
+		case 18:
 			{
 				fmt.Println("A", yylex.Text())
 				lval.s = yylex.Text()
 				return A
 			}
-		case 18:
+		case 19:
 			{
 				fmt.Println("W", yylex.Text())
 				lval.s = yylex.Text()
 				return W
 			}
-		case 19:
+		case 20:
 			{
 				fmt.Println("X", yylex.Text())
 				lval.s = yylex.Text()
 				return X
 			}
-		case 20:
+		case 21:
 			{
 				fmt.Println("CMP", yylex.Text())
 				lval.s = yylex.Text()
 				return CMP
 			}
-		case 21:
+		case 22:
 			{
 				fmt.Println("SOP", yylex.Text())
 				lval.s = yylex.Text()
 				return SOP
 			}
-		case 22:
+		case 23:
 			{
 				fmt.Println("AOP", yylex.Text())
 				lval.s = yylex.Text()
 				return AOP
 			}
-		case 23:
+		case 24:
 			{
 				fmt.Println("LABEL", yylex.Text())
 				lval.s = yylex.Text()
 				return LABEL
 			}
-		case 24:
+		case 25:
 			{
 				fmt.Printf("Found invalid input on line: %d\n", yylex.Line())
 			}
